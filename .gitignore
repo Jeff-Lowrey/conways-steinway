@@ -23,6 +23,8 @@ Cargo.lock
 # Include piano samples - essential for the application
 !samples/
 !samples/*.wav
+!rust/audio-samples/
+!rust/audio-samples/*.wav
 !*.wav
 
 # IDE files

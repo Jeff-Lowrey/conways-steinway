@@ -1,18 +1,21 @@
+// Library interface for Conway's Steinway
+// This allows integration tests to access the modules
+
+pub mod game_board;
+pub mod config;
+
+// Load audio modules from sibling folder
+#[path = "../../audio/src/lib.rs"]
+pub mod audio_lib;
+
+// Re-export commonly used types
+pub use audio_lib::{PlayerPiano, AudioEngine, NullAudioEngine, AudioPlayer};
+
+// Game of Life types
 use std::fmt;
-use std::env;
-use std::thread;
-use std::time::Duration;
 
-mod piano_player;
-use piano_player::PlayerPiano;
-
-mod game_board;
-use game_board::GameBoard;
-
-mod audio;
-
-const BOARD_WIDTH: usize = 88;
-const BOARD_HEIGHT: usize = 40;
+pub const BOARD_WIDTH: usize = 88;
+pub const BOARD_HEIGHT: usize = 40;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Cell {
@@ -177,46 +180,4 @@ impl fmt::Display for GameOfLife {
         
         writeln!(f, "{}", "=".repeat(BOARD_WIDTH + 4))
     }
-}
-
-
-
-fn main() {
-    println!("Conway's Steinway - Rust Implementation");
-    println!("======================================");
-
-    let args: Vec<String> = env::args().collect();
-    let use_static = args.len() > 1 && args[1] == "--static";
-    let use_fur_elise = args.len() > 1 && args[1] == "--fur-elise";
-
-    let mut game = if use_static {
-        println!("Using complex predefined patterns");
-        GameBoard::create_complex_board()
-    } else if use_fur_elise {
-        println!("Using Für Elise melody configuration");
-        GameBoard::create_fur_elise_board()
-    } else {
-        println!("Using random board configuration");
-        GameBoard::create_random_board()
-    };
-    
-    let piano = if args.contains(&"--silent".to_string()) {
-        PlayerPiano::new_silent()
-    } else {
-        PlayerPiano::new()
-    };
-
-    for step in 0..20 {
-        println!("\nStep {}", step + 1);
-        
-        let piano_keys = GameBoard::get_bottom_row_and_advance(&mut game);
-        piano.play_keys(&piano_keys);
-        
-        // Add a small delay between steps for better audio timing
-        thread::sleep(Duration::from_millis(200));
-        
-        println!("\n{}", game);
-    }
-    
-    println!("\nFinal generation: {}", game.generation());
 }
