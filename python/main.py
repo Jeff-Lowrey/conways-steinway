@@ -27,7 +27,7 @@ def main():
     generations = None if config.generations.is_unlimited else config.generations.limit
     
     # Create a piano with configured settings
-    piano = Piano(generations=generations, audio_enabled=config.audio_enabled)
+    piano = Piano(generations=generations, audio_enabled=not config.silent)
     
     # Initialize the game board based on configuration
     if config.board_type == BoardType.FUR_ELISE:

@@ -44,7 +44,7 @@ class Config:
     """
     def __init__(self):
         self.board_type: BoardType = BoardType.RANDOM
-        self.audio_enabled: bool = True
+        self.silent: bool = False  # Audio is enabled by default (silent=False)
         self.generations: GenerationLimit = GenerationLimit()  # Unlimited by default
         self.step_delay_ms: int = 200
         self.tempo_bpm: Optional[float] = None
@@ -80,10 +80,12 @@ class Config:
             default=None
         )
         
+        # Using the standard approach for boolean flags:
+        # - silent flag disables audio (audio is enabled by default)
         parser.add_argument(
             "-s", "--silent",
             dest="silent",
-            help="Disable audio output",
+            help="Disable audio output (audio is enabled by default)",
             action="store_true"
         )
         
@@ -123,8 +125,9 @@ class Config:
         if args.board_type:
             config.board_type = BoardType(args.board_type)
         
+        # Set silent mode if the flag is present
         if args.silent:
-            config.audio_enabled = False
+            config.silent = True
         
         if args.generations is not None:
             config.generations = (
@@ -151,9 +154,9 @@ class Config:
             except ValueError:
                 pass  # Invalid value, keep default
         
-        # Audio enabled/disabled
+        # Audio enabled by default, check for silent mode in environment
         if silent_env := os.environ.get("CONWAYS_STEINWAY_SILENT"):
-            self.audio_enabled = not (silent_env.lower() in ("1", "true", "yes"))
+            self.silent = silent_env.lower() in ("1", "true", "yes")
         
         # Generations
         if generations_env := os.environ.get("CONWAYS_STEINWAY_GENERATIONS"):
@@ -196,9 +199,12 @@ class Config:
                     except ValueError:
                         pass  # Invalid value, keep default
                 
-                # Audio enabled
-                if "audio_enabled" in config_data:
-                    self.audio_enabled = bool(config_data["audio_enabled"])
+                # Check for silent mode in config file
+                if "silent" in config_data:
+                    self.silent = bool(config_data["silent"])
+                # For backward compatibility
+                elif "audio_enabled" in config_data:
+                    self.silent = not bool(config_data["audio_enabled"])
                 
                 # Generations
                 if generations := config_data.get("generations"):
@@ -230,7 +236,7 @@ class Config:
         """
         config_data = {
             "board_type": self.board_type.value,
-            "audio_enabled": self.audio_enabled,
+            "silent": self.silent,
             "generations": repr(self.generations),
             "step_delay_ms": self.step_delay_ms,
             "tempo_bpm": self.tempo_bpm
@@ -264,7 +270,7 @@ class Config:
         """
         print("Configuration:")
         print(f"  Board Type: {self.board_type.name}")
-        print(f"  Audio Enabled: {self.audio_enabled}")
+        print(f"  Silent Mode: {self.silent}")
         print(f"  Generations: {self.generations}")
         
         if self.tempo_bpm is not None:
