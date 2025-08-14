@@ -11,3 +11,5 @@ I've implemented this in several different languages, both as a study for myself
 
 This is a frivolous project, but is intended and designed to work as part of a highly scalable and observable cloud application running in Kubernetes containers.
 
+Or at least some kind of scalable and observable cloud application running on something - possibly withe backends running serverless or who knows.
+
