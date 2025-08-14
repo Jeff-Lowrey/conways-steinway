@@ -11,5 +11,43 @@ I've implemented this in several different languages, both as a study for myself
 
 This is a frivolous project, but is intended and designed to work as part of a highly scalable and observable cloud application running in Kubernetes containers.
 
-Or at least some kind of scalable and observable cloud application running on something - possibly withe backends running serverless or who knows.
+Or at least some kind of scalable and observable cloud application running on something - possibly with backends running serverless or who knows.
+
+## Project Structure
+
+```
+/
+├── config/              # Centralized configuration files
+│   ├── python/         # Python configuration
+│   └── rust/           # Rust configuration
+├── python/             # Python implementation
+├── rust/               # Rust implementation
+│   ├── audio/          # Audio modules
+│   └── life/           # Game of Life modules
+├── static/             # Static assets
+└── run.py              # Main launcher script
+```
+
+## Quick Start
+
+### Running the Python Version
+
+```bash
+# From the project root directory
+./run.py
+```
+
+See [python/README.md](python/README.md) for more details on the Python implementation.
+
+### Running the Rust Version
+
+```bash
+# From the project root directory
+cd rust/life
+cargo run
+```
+
+## Configuration
+
+The project uses a centralized configuration structure in the `/config` directory. Each language implementation has its own subdirectory with configuration files specific to that implementation.
 
