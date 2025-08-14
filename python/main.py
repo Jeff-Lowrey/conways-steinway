@@ -6,7 +6,15 @@ Processes configuration, initializes the game board, and plays music.
 """
 
 import time
+
 from piano import Piano
+import sys
+
+# Load configuration from config directory
+from config_loader import ensure_config_in_path
+ensure_config_in_path()
+
+# Now we can import from the config module
 from config import Config, BoardType, GenerationLimit
 from game_board import GameBoard
 
@@ -24,7 +32,7 @@ def main():
     config.print_config()
     
     # Determine the number of generations to play
-    generations = None if config.generations.is_unlimited else config.generations.limit
+    generations = None if not config.generations.is_limited else config.generations.limit
     
     # Create a piano with configured settings
     piano = Piano(generations=generations, audio_enabled=not config.silent)
@@ -63,14 +71,21 @@ def main():
     
     def piano_print(message):
         if "Playing key" in message:
-            key_num = int(message.split("Playing key ")[1])
-            # Use different symbols based on the key position (bass, middle, treble)
-            if key_num < 30:
-                original_print("♭", end="")
-            elif key_num < 60:
-                original_print("♪", end="")
-            else:
-                original_print("♯", end="")
+            try:
+                key_num = int(message.split("Playing key ")[1])
+                # Use different symbols based on the key position (bass, middle, treble)
+                if key_num < 30:
+                    original_print("♭", end="")
+                elif key_num < 60:
+                    original_print("♪", end="")
+                else:
+                    original_print("♯", end="")
+            except (IndexError, ValueError):
+                # Handle case where the message format doesn't match expected pattern
+                original_print(message)
+        elif "Playing keys:" in message:
+            # Handle multiple keys being played
+            original_print("♫", end="")
         else:
             original_print(message)
     
