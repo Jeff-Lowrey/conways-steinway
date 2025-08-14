@@ -64,16 +64,16 @@ class Config:
     def __init__(self):
         """Initialize with default values"""
         # Board initialization type
-        self.board_type = BoardType.RANDOM
+        self.board_type: BoardType = BoardType.RANDOM
         
         # Control audio output (silent = no audio)
-        self.silent = False
+        self.silent: bool = False  # Audio is enabled by default (silent=False)
         
         # Generation limit
-        self.generations = GenerationLimit(GenerationLimit.UNLIMITED)
+        self.generations: GenerationLimit = GenerationLimit()  # Unlimited by default
         
         # Delay between steps in milliseconds
-        self.step_delay_ms = 200
+        self.step_delay_ms: int = 200
         
         # Musical tempo in beats per minute (optional)
         self.tempo_bpm: Optional[float] = None

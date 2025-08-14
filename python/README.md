@@ -64,7 +64,13 @@ This is the Python implementation of the backend for Conway's Steinway, which co
 ## Usage
 
 ### Running the Application
-To run the main demonstration:
+To run the main demonstration, use the project-level launcher script:
+```bash
+# From the project root directory
+./run.py
+```
+
+Alternatively, you can run the main.py directly:
 ```bash
 python main.py
 ```
@@ -90,6 +96,24 @@ The package includes several ways to ensure pip is always updated:
    python update_pip.py
    ```
 
+#### Configuration
+
+The project uses a centralized configuration structure:
+
+```
+/config
+  conways_steinway.toml    # Shared configuration file for all implementations
+  pyproject.toml          # Python project configuration (includes dependencies)
+
+/python
+  config.py               # Python configuration management
+  config_loader.py        # Loads configuration from the shared file
+  .env                    # Environment variables
+  setup.py                # Installation script
+  activate_venv.sh        # Virtual environment activation (Unix)
+  activate_venv.bat       # Virtual environment activation (Windows)
+```
+
 #### Core Components
 
 1. **life.py**: Implements Conway's Game of Life
@@ -98,6 +122,10 @@ The package includes several ways to ensure pip is always updated:
 
 2. **piano.py**: Implements the piano interface
    - `Piano` class: Converts game rows to piano key triggers
+   
+3. **config.py**: Configuration management
+   - Located in the `python` directory
+   - Manages command-line arguments, environment variables, and configuration files
 
 #### Design Decisions
 
