@@ -370,11 +370,11 @@ def get_config_path() -> Path:
     """Get the path to the config directory"""
     # Find config relative to project root
     base_path = Path(__file__).resolve().parent.parent
-    config_path = base_path / "config" / "python"
+    config_path = base_path / "config"
     
     if not config_path.exists():
         # Fallback to assuming we're in the project root
-        config_path = Path('.').resolve() / "config" / "python"
+        config_path = Path('.').resolve() / "config"
     
     return config_path
 

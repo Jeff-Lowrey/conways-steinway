@@ -58,9 +58,9 @@ class Life:
         self.board = []
         self.generation = 0
         
-        # Initialize with an empty board
+        # Initialize with an empty board - always use self.width (88) for row width
         for _ in range(height):
-            self.board.append(Row([Cell.DEAD] * width))
+            self.board.append(Row([Cell.DEAD] * self.width))
     
     def new_random_board(self, width=BOARD_WIDTH, height=BOARD_HEIGHT, alive_probability=0.2):
         """
@@ -77,7 +77,7 @@ class Life:
         board = []
         for _ in range(height):
             row_cells = [Cell.ALIVE if random.random() < alive_probability else Cell.DEAD 
-                         for _ in range(width)]
+                         for _ in range(self.width)]
             board.append(Row(row_cells))
         
         self.board = board

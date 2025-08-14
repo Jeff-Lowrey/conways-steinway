@@ -1,6 +1,7 @@
 // Integration tests for piano functionality
 
-// We need to import from the main crate
+// Need to use an external path for integration tests
+extern crate conways_steinway;
 use conways_steinway::PlayerPiano;
 
 /// Test that all 88 piano keys can be played without panicking

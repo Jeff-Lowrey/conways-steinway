@@ -580,7 +580,7 @@ mod tests {
     #[test]
     fn test_config_file_creation() {
         let dir = tempdir().unwrap();
-        let file_path = dir.path().join("test_config.toml");
+        let file_path = dir.path().join("test_config.properties");
         
         let config = Config {
             board_type: BoardType::Static,
@@ -589,14 +589,15 @@ mod tests {
             step_delay_ms: 500,
             tempo_bpm: Some(140.0),
             config_file: Some(file_path.clone()),
+            ..Default::default()
         };
 
         config.save_to_file(&file_path).unwrap();
         assert!(file_path.exists());
 
         let contents = fs::read_to_string(&file_path).unwrap();
-        assert!(contents.contains("board_type = \"Static\""));
-        assert!(contents.contains("silent = true"));
+        assert!(contents.contains("board.type=static"));
+        assert!(contents.contains("silent="));
     }
 
     #[test]
@@ -614,11 +615,21 @@ mod tests {
             ..Default::default()
         };
 
-        let toml_unlimited = toml::to_string(&config_unlimited).unwrap();
-        let toml_limited = toml::to_string(&config_limited).unwrap();
+        // Create temporary files for testing
+        let dir = tempdir().unwrap();
+        let file_unlimited = dir.path().join("unlimited.properties");
+        let file_limited = dir.path().join("limited.properties");
+        
+        // Save to properties files
+        config_unlimited.save_to_file(&file_unlimited).unwrap();
+        config_limited.save_to_file(&file_limited).unwrap();
+        
+        // Read contents
+        let content_unlimited = fs::read_to_string(&file_unlimited).unwrap();
+        let content_limited = fs::read_to_string(&file_limited).unwrap();
 
-        assert!(toml_unlimited.contains("Unlimited"));
-        assert!(toml_limited.contains("Limited"));
+        assert!(content_unlimited.contains("generations=unlimited"));
+        assert!(content_limited.contains("generations=50"));
     }
 
     #[test]

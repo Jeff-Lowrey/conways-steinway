@@ -116,6 +116,6 @@ mod tests {
                 config_path.to_string_lossy().contains("config"));
         
         let config_file = get_default_config_file();
-        assert!(config_file.ends_with("conways_steinway.toml"));
+        assert!(config_file.ends_with("conways_steinway.properties"));
     }
 }
