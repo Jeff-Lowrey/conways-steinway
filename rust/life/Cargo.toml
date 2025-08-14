@@ -8,6 +8,7 @@ rodio = "0.17"
 clap = { version = "4.0", features = ["derive", "env"] }
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.8"
+java-properties = "2.0.0"
 
 [dev-dependencies]
 tempfile = "3.8"

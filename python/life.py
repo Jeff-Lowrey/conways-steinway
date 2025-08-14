@@ -48,10 +48,12 @@ class Row:
 class Life:
     """
     Implements Conway's Game of Life with a configurable board size.
-    Default size is 88 cells wide (matching piano keys) and 40 cells high.
+    Board width is always 88 cells wide (matching piano keys) and height is configurable.
     """
     def __init__(self, width=BOARD_WIDTH, height=BOARD_HEIGHT):
-        self.width = width
+        # Always use exactly 88 cells for board width (matching piano keys)
+        # This is a fixed requirement and cannot be changed
+        self.width = BOARD_WIDTH
         self.height = height
         self.board = []
         self.generation = 0
@@ -62,10 +64,12 @@ class Life:
     
     def new_random_board(self, width=BOARD_WIDTH, height=BOARD_HEIGHT, alive_probability=0.2):
         """
-        Create a new board with the given width and height.
+        Create a new board with the given height.
         Initializes the board with random live and dead cells.
+        Board width is fixed at exactly 88 cells to match piano keys.
         """
-        self.width = width
+        # Width is always 88 cells (matching piano keys)
+        self.width = BOARD_WIDTH
         self.height = height
         self.generation = 0
         
