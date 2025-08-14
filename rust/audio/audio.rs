@@ -47,33 +47,33 @@ impl AudioEngine {
         // Piano key mapping: A0=0, A#0=1, B0=2, C1=3, C#1=4, D1=5, D#1=6, E1=7, F1=8, F#1=9, G1=10, G#1=11, A1=12...
         let sample_files = [
             // Low range (Octave 1 & 2)
-            (9, "../audio-samples/piano_a1.wav"),     // A1 (key 9)
-            (21, "../audio-samples/piano_a2.wav"),    // A2 (key 21)
-            (24, "../audio-samples/piano_c2.wav"),    // C2 (key 24)
+            (9, "../../static/audio/piano_a1.wav"),     // A1 (key 9)
+            (21, "../../static/audio/piano_a2.wav"),    // A2 (key 21)
+            (24, "../../static/audio/piano_c2.wav"),    // C2 (key 24)
             
             // Mid-low range (Octave 3) - Better chromatic coverage
-            (36, "../audio-samples/piano_c3.wav"),    // C3 (key 36)
-            (38, "../audio-samples/piano_d3.wav"),    // D3 (key 38) - NEW
-            (41, "../audio-samples/piano_f3.wav"),    // F3 (key 41) - NEW  
-            (43, "../audio-samples/piano_g3.wav"),    // G3 (key 43) - NEW
+            (36, "../../static/audio/piano_c3.wav"),    // C3 (key 36)
+            (38, "../../static/audio/piano_d3.wav"),    // D3 (key 38)
+            (41, "../../static/audio/piano_f3.wav"),    // F3 (key 41)
+            (43, "../../static/audio/piano_g3.wav"),    // G3 (key 43)
             
             // Mid range (Octave 4) - Even better coverage
-            (48, "../audio-samples/piano_c4_ivory.wav"), // C4 - Middle C (key 48) - Best quality
-            (50, "../audio-samples/piano_d4.wav"),    // D4 (key 50) - NEW
-            (53, "../audio-samples/piano_f4.wav"),    // F4 (key 53) - NEW
-            (55, "../audio-samples/piano_g4.wav"),    // G4 (key 55) - NEW
+            (48, "../../static/audio/piano_c4_ivory.wav"), // C4 - Middle C (key 48) - Best quality
+            (50, "../../static/audio/piano_d4.wav"),    // D4 (key 50)
+            (53, "../../static/audio/piano_f4.wav"),    // F4 (key 53)
+            (55, "../../static/audio/piano_g4.wav"),    // G4 (key 55)
             
             // Alternative samples for comparison/backup
-            (36, "../audio-samples/piano_c3_kawai.wav"), // Alternative C3
-            (48, "../audio-samples/piano_c4.wav"),    // Alternative C4
-            (48, "../audio-samples/piano_c4_kawai.wav"), // Another C4 option
+            (36, "../../static/audio/piano_c3_kawai.wav"), // Alternative C3
+            (48, "../../static/audio/piano_c4.wav"),    // Alternative C4
+            (48, "../../static/audio/piano_c4_kawai.wav"), // Another C4 option
             
             // Upper-mid range (Octave 5)
-            (60, "../audio-samples/piano_c5.wav"),    // C5 (key 60)
+            (60, "../../static/audio/piano_c5.wav"),    // C5 (key 60)
             
             // High range (Octave 6 & 7)
-            (72, "../audio-samples/piano_c6.wav"),    // C6 (key 72)
-            (84, "../audio-samples/piano_c7.wav"),    // C7 (key 84)
+            (72, "../../static/audio/piano_c6.wav"),    // C6 (key 72)
+            (84, "../../static/audio/piano_c7.wav"),    // C7 (key 84)
         ];
 
         for (key, file_path) in sample_files.iter() {
