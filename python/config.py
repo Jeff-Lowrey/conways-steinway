@@ -108,8 +108,7 @@ class Config:
         parser.add_argument('--board-type', type=str, choices=['random', 'static', 'fur_elise', 'complex', 'showcase'], 
                            help='Board initialization type')
         parser.add_argument('--silent', action='store_true', help='Disable audio output')
-        parser.add_argument('--audio', action='store_true', dest='audio', 
-                           help='Enable audio output')
+        # Remove --audio flag since audio is now the default and we only check for --silent
         parser.add_argument('--generations', type=str, 
                            help='Generation limit (number or "Unlimited")')
         parser.add_argument('--step-delay', type=int, 
@@ -126,14 +125,12 @@ class Config:
                            help='Duration of chords in milliseconds')
         parser.add_argument('--initial-delay', type=int, dest='initial_delay_ms',
                            help='Initial delay between notes in milliseconds')
-        parser.add_argument('--detect-chords', action='store_true', dest='detect_chords',
-                           help='Enable automatic chord detection')
+        # Remove --detect-chords flag since it's now the default and we only check for --no-detect-chords
         parser.add_argument('--no-detect-chords', action='store_false', dest='detect_chords',
                            help='Disable automatic chord detection')
         parser.add_argument('--volume', type=float,
                            help='Audio volume (0.0-1.0)')
-        parser.add_argument('--pitch-shift', action='store_true', dest='pitch_shift',
-                           help='Enable pitch shifting')
+        # Remove --pitch-shift flag since it's now the default and we only check for --no-pitch-shift
         parser.add_argument('--no-pitch-shift', action='store_false', dest='pitch_shift',
                            help='Disable pitch shifting')
         
@@ -156,11 +153,10 @@ class Config:
         if args.board_type:
             config.board_type = BoardType.from_string(args.board_type)
         
+        # Audio is enabled by default (silent=false)
+        # Only set silent=true if the --silent flag is present
         if args.silent:
             config.silent = True
-            
-        if args.audio:
-            config.silent = False
         
         if args.generations:
             config.generations = GenerationLimit(args.generations)

@@ -127,11 +127,7 @@ impl Config {
                 .help("Disable audio output")
                 .action(ArgAction::SetTrue)
                 .env("CONWAYS_STEINWAY_SILENT"))
-            .arg(Arg::new("audio")
-                .short('a')
-                .long("audio")
-                .help("Enable audio output")
-                .action(ArgAction::SetTrue))
+            // Remove the --audio flag since audio is now the default and we only check for --silent
             .arg(Arg::new("generations")
                 .short('g')
                 .long("generations")
@@ -178,11 +174,7 @@ impl Config {
                 .help("Initial delay between notes in milliseconds")
                 .value_parser(clap::value_parser!(u64))
                 .env("CONWAYS_STEINWAY_INITIAL_DELAY"))
-            .arg(Arg::new("detect-chords")
-                .long("detect-chords")
-                .help("Enable automatic chord detection")
-                .action(ArgAction::SetTrue)
-                .env("CONWAYS_STEINWAY_DETECT_CHORDS"))
+            // Remove --detect-chords flag since it's now the default and we only check for --no-detect-chords
             .arg(Arg::new("no-detect-chords")
                 .long("no-detect-chords")
                 .help("Disable automatic chord detection")
@@ -193,11 +185,7 @@ impl Config {
                 .help("Audio volume (0.0-1.0)")
                 .value_parser(clap::value_parser!(f32))
                 .env("CONWAYS_STEINWAY_VOLUME"))
-            .arg(Arg::new("pitch-shift")
-                .long("pitch-shift")
-                .help("Enable pitch shifting")
-                .action(ArgAction::SetTrue)
-                .env("CONWAYS_STEINWAY_PITCH_SHIFT"))
+            // Remove --pitch-shift flag since it's now the default and we only check for --no-pitch-shift
             .arg(Arg::new("no-pitch-shift")
                 .long("no-pitch-shift")
                 .help("Disable pitch shifting")
@@ -237,12 +225,10 @@ impl Config {
             };
         }
 
+        // Audio is enabled by default (silent=false)
+        // Only set silent=true if the --silent flag is present
         if matches.get_flag("silent") {
             config.silent = true;
-        }
-        
-        if matches.get_flag("audio") {
-            config.silent = false;
         }
 
         if let Some(&generations) = matches.get_one::<u32>("generations") {
@@ -278,10 +264,8 @@ impl Config {
             config.initial_delay_ms = initial_delay;
         }
         
-        if matches.get_flag("detect-chords") {
-            config.detect_chords = true;
-        }
-        
+        // Chord detection is enabled by default (detect_chords=true)
+        // Only set detect_chords=false if the --no-detect-chords flag is present
         if matches.get_flag("no-detect-chords") {
             config.detect_chords = false;
         }
@@ -290,10 +274,8 @@ impl Config {
             config.volume = volume;
         }
         
-        if matches.get_flag("pitch-shift") {
-            config.pitch_shift = true;
-        }
-        
+        // Pitch shifting is enabled by default (pitch_shift=true)
+        // Only set pitch_shift=false if the --no-pitch-shift flag is present
         if matches.get_flag("no-pitch-shift") {
             config.pitch_shift = false;
         }
