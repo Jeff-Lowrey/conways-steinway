@@ -3,6 +3,12 @@
 
 pub mod game_board;
 pub mod config;
+pub mod config_loader;
+pub mod unified_config;
+
+// Re-export commonly used config types
+pub use config::{Config, BoardType, GenerationLimit};
+pub use config_loader::{get_config_path, get_default_config_file, load_config};
 
 // Load audio modules from sibling folder
 #[path = "../audio/lib.rs"]

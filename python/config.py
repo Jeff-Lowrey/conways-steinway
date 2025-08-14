@@ -1,284 +1,396 @@
-#!/bin/python3
-
 """
-Configuration management for Conway's Steinway.
-Handles command-line arguments, environment variables, and configuration files.
+Conway's Steinway Configuration Module
+
+This module handles configuration loading for the Conway's Game of Life
+piano generator. It includes:
+- Command-line argument parsing
+- Environment variable loading
+- Configuration file handling
 """
 
 import argparse
 import os
-import json
-from enum import Enum
+import enum
+import configparser
+from jproperties import Properties
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Dict, Any, List, Union
 
-
-class BoardType(Enum):
-    """
-    Enum for different board initialization types.
-    """
+class BoardType(enum.Enum):
+    """Type of board initialization to use"""
     RANDOM = "random"
     STATIC = "static"
-    FUR_ELISE = "fur-elise"
-
+    FUR_ELISE = "fur_elise"
+    COMPLEX = "complex"
+    SHOWCASE = "showcase"
+    
+    @classmethod
+    def from_string(cls, value: str) -> 'BoardType':
+        """Convert string to BoardType enum"""
+        # Normalize input: lowercase and replace hyphens/spaces with underscores
+        normalized = value.lower().replace('-', '_').replace(' ', '_')
+        
+        for member in cls:
+            if member.value == normalized:
+                return member
+        raise ValueError(f"Invalid board type: {value}")
 
 class GenerationLimit:
-    """
-    Class to represent generation limit, either a specific number or unlimited.
-    """
-    def __init__(self, limit: Optional[int] = None):
-        self.limit = limit
-
-    @property
-    def is_unlimited(self) -> bool:
-        return self.limit is None
-
-    def __repr__(self) -> str:
-        return f"Unlimited" if self.is_unlimited else f"Limited({self.limit})"
-
+    """Configuration for generation limit"""
+    UNLIMITED = "unlimited"
+    
+    def __init__(self, value: Union[str, int, Dict[str, int]] = UNLIMITED):
+        """Initialize with 'unlimited', a number, or a dict {'limited': number}"""
+        if isinstance(value, str) and value.lower() == self.UNLIMITED.lower():
+            self.is_limited = False
+            self.limit = None
+        elif isinstance(value, int) or (isinstance(value, str) and value.isdigit()):
+            self.is_limited = True
+            self.limit = int(value)
+        elif isinstance(value, dict) and 'limited' in value:
+            self.is_limited = True
+            self.limit = int(value['limited'])
+        else:
+            raise ValueError(f"Invalid generation limit: {value}")
+    
+    def __str__(self) -> str:
+        if not self.is_limited:
+            return self.UNLIMITED
+        return f"Limited({self.limit})"
 
 class Config:
-    """
-    Configuration class for Conway's Steinway.
-    Handles command-line arguments, environment variables, and configuration files.
-    """
+    """Configuration for Conway's Steinway"""
+    
     def __init__(self):
-        self.board_type: BoardType = BoardType.RANDOM
-        self.audio_enabled: bool = True
-        self.generations: GenerationLimit = GenerationLimit()  # Unlimited by default
-        self.step_delay_ms: int = 200
+        """Initialize with default values"""
+        # Board initialization type
+        self.board_type = BoardType.RANDOM
+        
+        # Control audio output (silent = no audio)
+        self.silent = False
+        
+        # Generation limit
+        self.generations = GenerationLimit(GenerationLimit.UNLIMITED)
+        
+        # Delay between steps in milliseconds
+        self.step_delay_ms = 200
+        
+        # Musical tempo in beats per minute (optional)
         self.tempo_bpm: Optional[float] = None
+        
+        # Config file path
         self.config_file: Optional[Path] = None
-
+        
+        # Audio configuration
+        self.note_duration_ms = 200
+        self.gap_ms = 50
+        self.chord_duration_ms = 300
+        self.initial_delay_ms = 50
+        self.detect_chords = True
+        self.volume = 0.6
+        self.pitch_shift = True
+        
+        # Random board configuration
+        self.alive_probability = 0.2
+        
+        # Board dimensions
+        self.board_width = 88  # Fixed at 88 cells to match piano keys
+        self.board_height = 40
+    
     @classmethod
     def from_args_and_env(cls) -> 'Config':
-        """
-        Create a Config instance from command-line arguments and environment variables.
-        """
+        """Create a configuration from command-line args and environment variables"""
         config = cls()
         
-        # Load from environment variables first
-        config._load_from_env()
+        # Parse command-line arguments
+        parser = argparse.ArgumentParser(description="Conway's Steinway - Game of Life Piano Generator")
+        parser.add_argument('--config', type=str, help='Path to configuration file')
+        parser.add_argument('--board-type', type=str, choices=['random', 'static', 'fur_elise', 'complex', 'showcase'], 
+                           help='Board initialization type')
+        parser.add_argument('--silent', action='store_true', help='Disable audio output')
+        parser.add_argument('--audio', action='store_true', dest='audio', 
+                           help='Enable audio output')
+        parser.add_argument('--generations', type=str, 
+                           help='Generation limit (number or "Unlimited")')
+        parser.add_argument('--step-delay', type=int, 
+                           help='Delay between steps in milliseconds')
+        parser.add_argument('--tempo', type=float, 
+                           help='Musical tempo in beats per minute')
         
-        # Parse command line arguments
-        parser = argparse.ArgumentParser(
-            description="A musical interpretation of Conway's Game of Life using piano sounds"
-        )
+        # Audio settings
+        parser.add_argument('--note-duration', type=int, dest='note_duration_ms',
+                           help='Duration of individual notes in milliseconds')
+        parser.add_argument('--gap', type=int, dest='gap_ms',
+                           help='Gap between notes in milliseconds')
+        parser.add_argument('--chord-duration', type=int, dest='chord_duration_ms',
+                           help='Duration of chords in milliseconds')
+        parser.add_argument('--initial-delay', type=int, dest='initial_delay_ms',
+                           help='Initial delay between notes in milliseconds')
+        parser.add_argument('--detect-chords', action='store_true', dest='detect_chords',
+                           help='Enable automatic chord detection')
+        parser.add_argument('--no-detect-chords', action='store_false', dest='detect_chords',
+                           help='Disable automatic chord detection')
+        parser.add_argument('--volume', type=float,
+                           help='Audio volume (0.0-1.0)')
+        parser.add_argument('--pitch-shift', action='store_true', dest='pitch_shift',
+                           help='Enable pitch shifting')
+        parser.add_argument('--no-pitch-shift', action='store_false', dest='pitch_shift',
+                           help='Disable pitch shifting')
         
-        parser.add_argument(
-            "-c", "--config",
-            dest="config",
-            help="Configuration file path",
-            type=str
-        )
+        # Random board settings
+        parser.add_argument('--alive-probability', type=float,
+                           help='Probability of cells being alive in random boards (0.0-1.0)')
         
-        parser.add_argument(
-            "-b", "--board-type",
-            dest="board_type",
-            help="Board initialization type",
-            choices=["random", "static", "fur-elise"],
-            default=None
-        )
-        
-        parser.add_argument(
-            "-s", "--silent",
-            dest="silent",
-            help="Disable audio output",
-            action="store_true"
-        )
-        
-        parser.add_argument(
-            "-g", "--generations",
-            dest="generations",
-            help="Number of generations to run (0 for unlimited)",
-            type=int,
-            default=None
-        )
-        
-        parser.add_argument(
-            "-d", "--delay",
-            dest="delay",
-            help="Delay between steps in milliseconds",
-            type=int,
-            default=None
-        )
-        
-        parser.add_argument(
-            "-t", "--tempo",
-            dest="tempo",
-            help="Musical tempo in beats per minute (overrides delay)",
-            type=float,
-            default=None
-        )
+        # Board dimensions
+        parser.add_argument('--height', type=int, dest='board_height',
+                           help='Board height in cells')
         
         args = parser.parse_args()
         
-        # Load from config file if specified
+        # Apply command-line arguments if provided
         if args.config:
-            config_path = Path(args.config)
-            config.config_file = config_path
-            config._load_from_file(config_path)
+            config.config_file = Path(args.config)
+            # Load configuration from file
+            config.load_from_file(config.config_file)
         
-        # Override with command line arguments
         if args.board_type:
-            config.board_type = BoardType(args.board_type)
+            config.board_type = BoardType.from_string(args.board_type)
         
         if args.silent:
-            config.audio_enabled = False
+            config.silent = True
+            
+        if args.audio:
+            config.silent = False
         
-        if args.generations is not None:
-            config.generations = (
-                GenerationLimit() if args.generations == 0 
-                else GenerationLimit(args.generations)
-            )
+        if args.generations:
+            config.generations = GenerationLimit(args.generations)
         
-        if args.delay is not None:
-            config.step_delay_ms = args.delay
+        if args.step_delay:
+            config.step_delay_ms = args.step_delay
         
-        if args.tempo is not None:
+        if args.tempo:
             config.tempo_bpm = args.tempo
+            
+        # Apply audio settings from command line
+        if args.note_duration_ms:
+            config.note_duration_ms = args.note_duration_ms
+            
+        if args.gap_ms:
+            config.gap_ms = args.gap_ms
+            
+        if args.chord_duration_ms:
+            config.chord_duration_ms = args.chord_duration_ms
+            
+        if args.initial_delay_ms:
+            config.initial_delay_ms = args.initial_delay_ms
+            
+        if args.detect_chords is not None:
+            config.detect_chords = args.detect_chords
+            
+        if args.volume:
+            config.volume = args.volume
+            
+        if args.pitch_shift is not None:
+            config.pitch_shift = args.pitch_shift
+            
+        # Apply random board settings
+        if args.alive_probability:
+            config.alive_probability = args.alive_probability
+            
+        # Apply board dimensions
+        if args.board_height:
+            config.board_height = args.board_height
+        
+        # Apply environment variables if present (standardized format)
+        if 'CONWAYS_STEINWAY_BOARD_TYPE' in os.environ:
+            config.board_type = BoardType.from_string(os.environ['CONWAYS_STEINWAY_BOARD_TYPE'])
+        
+        if 'CONWAYS_STEINWAY_SILENT' in os.environ:
+            value = os.environ['CONWAYS_STEINWAY_SILENT'].lower()
+            config.silent = value in ('1', 'true', 'yes', 'on')
+        
+        if 'CONWAYS_STEINWAY_GENERATIONS' in os.environ:
+            config.generations = GenerationLimit(os.environ['CONWAYS_STEINWAY_GENERATIONS'])
+        
+        if 'CONWAYS_STEINWAY_STEP_DELAY' in os.environ:
+            config.step_delay_ms = int(os.environ['CONWAYS_STEINWAY_STEP_DELAY'])
+        
+        if 'CONWAYS_STEINWAY_TEMPO' in os.environ:
+            config.tempo_bpm = float(os.environ['CONWAYS_STEINWAY_TEMPO'])
+            
+        # Audio settings from environment variables
+        if 'CONWAYS_STEINWAY_NOTE_DURATION' in os.environ:
+            config.note_duration_ms = int(os.environ['CONWAYS_STEINWAY_NOTE_DURATION'])
+            
+        if 'CONWAYS_STEINWAY_GAP' in os.environ:
+            config.gap_ms = int(os.environ['CONWAYS_STEINWAY_GAP'])
+            
+        if 'CONWAYS_STEINWAY_CHORD_DURATION' in os.environ:
+            config.chord_duration_ms = int(os.environ['CONWAYS_STEINWAY_CHORD_DURATION'])
+            
+        if 'CONWAYS_STEINWAY_INITIAL_DELAY' in os.environ:
+            config.initial_delay_ms = int(os.environ['CONWAYS_STEINWAY_INITIAL_DELAY'])
+            
+        if 'CONWAYS_STEINWAY_DETECT_CHORDS' in os.environ:
+            value = os.environ['CONWAYS_STEINWAY_DETECT_CHORDS'].lower()
+            config.detect_chords = value in ('1', 'true', 'yes', 'on')
+            
+        if 'CONWAYS_STEINWAY_VOLUME' in os.environ:
+            config.volume = float(os.environ['CONWAYS_STEINWAY_VOLUME'])
+            
+        if 'CONWAYS_STEINWAY_PITCH_SHIFT' in os.environ:
+            value = os.environ['CONWAYS_STEINWAY_PITCH_SHIFT'].lower()
+            config.pitch_shift = value in ('1', 'true', 'yes', 'on')
+            
+        # Random board settings from environment variables
+        if 'CONWAYS_STEINWAY_ALIVE_PROBABILITY' in os.environ:
+            config.alive_probability = float(os.environ['CONWAYS_STEINWAY_ALIVE_PROBABILITY'])
+            
+        # Board dimensions from environment variables
+        if 'CONWAYS_STEINWAY_BOARD_HEIGHT' in os.environ:
+            config.board_height = int(os.environ['CONWAYS_STEINWAY_BOARD_HEIGHT'])
         
         return config
-
-    def _load_from_env(self) -> None:
-        """
-        Load configuration from environment variables.
-        """
-        # Board type
-        if board_type_env := os.environ.get("CONWAYS_STEINWAY_BOARD_TYPE"):
-            try:
-                self.board_type = BoardType(board_type_env.lower())
-            except ValueError:
-                pass  # Invalid value, keep default
+    
+    def load_from_file(self, file_path: Path) -> None:
+        """Load configuration from a properties file using the jproperties library"""
+        try:
+            if not file_path.exists():
+                raise FileNotFoundError(f"Config file not found: {file_path}")
+            
+            # Use jproperties to parse the file
+            properties = Properties()
+            with open(file_path, 'rb') as f:
+                properties.load(f)
+            
+            # Get raw file contents to check for presence of 'silent' key
+            with open(file_path, 'r') as f:
+                raw_content = f.read()
+                self.silent = 'silent' in raw_content
+            
+            # Apply core configuration values from file
+            if 'board.type' in properties:
+                board_type_val = properties.get('board.type').data
+                self.board_type = BoardType.from_string(board_type_val)
+            
+            if 'generations' in properties:
+                generations_val = properties.get('generations').data
+                self.generations = GenerationLimit(generations_val)
+            
+            if 'step.delay.ms' in properties:
+                delay_val = properties.get('step.delay.ms').data
+                self.step_delay_ms = int(delay_val)
+            
+            if 'tempo.bpm' in properties:
+                tempo_val = properties.get('tempo.bpm').data
+                self.tempo_bpm = float(tempo_val)
+                
+            # Load audio configuration
+            if 'audio.note.duration.ms' in properties:
+                self.note_duration_ms = int(properties.get('audio.note.duration.ms').data)
+                
+            if 'audio.gap.ms' in properties:
+                self.gap_ms = int(properties.get('audio.gap.ms').data)
+                
+            if 'audio.chord.duration.ms' in properties:
+                self.chord_duration_ms = int(properties.get('audio.chord.duration.ms').data)
+                
+            if 'audio.initial.delay.ms' in properties:
+                self.initial_delay_ms = int(properties.get('audio.initial.delay.ms').data)
+                
+            if 'audio.detect.chords' in properties:
+                value = properties.get('audio.detect.chords').data.lower()
+                self.detect_chords = value in ('true', 'yes', 'on', '1')
+                    
+            # Load random board configuration
+            if 'random.alive.probability' in properties:
+                prob_val = properties.get('random.alive.probability').data
+                self.alive_probability = float(prob_val)
+            
+            # Additional audio settings
+            if 'audio.volume' in properties:
+                self.volume = float(properties.get('audio.volume').data)
+            elif 'volume' in properties:
+                self.volume = float(properties.get('volume').data)
+                
+            if 'audio.pitch.shift' in properties:
+                value = properties.get('audio.pitch.shift').data.lower()
+                self.pitch_shift = value in ('true', 'yes', 'on', '1')
+            elif 'pitch.shift' in properties:
+                value = properties.get('pitch.shift').data.lower()
+                self.pitch_shift = value in ('true', 'yes', 'on', '1')
+            
+            # Apply board height if present
+            if 'board.height' in properties:
+                self.board_height = int(properties.get('board.height').data)
+                
+        except Exception as e:
+            print(f"Error loading config file: {e}")
+            
+    def __str__(self) -> str:
+        """String representation of the configuration"""
+        result = (
+            f"Config:\n"
+            f"  Board Type: {self.board_type.value}\n"
+            f"  Silent Mode: {self.silent}\n"
+            f"  Generations: {self.generations}\n"
+            f"  Step Delay: {self.step_delay_ms}ms\n"
+            f"  Tempo: {self.tempo_bpm if self.tempo_bpm else 'Not set'}\n"
+            f"  Board: {self.board_width}×{self.board_height}\n"
+        )
         
-        # Audio enabled/disabled
-        if silent_env := os.environ.get("CONWAYS_STEINWAY_SILENT"):
-            self.audio_enabled = not (silent_env.lower() in ("1", "true", "yes"))
+        # Audio settings
+        result += (f"  Audio Settings:\n"
+                  f"    Note Duration: {self.note_duration_ms}ms\n"
+                  f"    Chord Duration: {self.chord_duration_ms}ms\n"
+                  f"    Gap Between Notes: {self.gap_ms}ms\n"
+                  f"    Volume: {self.volume}\n"
+                  f"    Detect Chords: {self.detect_chords}\n"
+                  f"    Pitch Shift: {self.pitch_shift}\n")
         
-        # Generations
-        if generations_env := os.environ.get("CONWAYS_STEINWAY_GENERATIONS"):
-            try:
-                generations = int(generations_env)
-                self.generations = (
-                    GenerationLimit() if generations == 0 
-                    else GenerationLimit(generations)
-                )
-            except ValueError:
-                pass  # Invalid value, keep default
+        # Random board settings
+        if self.board_type == BoardType.RANDOM:
+            result += f"  Random Board: {self.alive_probability*100:.1f}% alive cells\n"
+            
+        return result
         
-        # Step delay
-        if delay_env := os.environ.get("CONWAYS_STEINWAY_DELAY"):
-            try:
-                self.step_delay_ms = int(delay_env)
-            except ValueError:
-                pass  # Invalid value, keep default
+    def print_config(self) -> None:
+        """Print the configuration to the console"""
+        print(str(self))
         
-        # Tempo
-        if tempo_env := os.environ.get("CONWAYS_STEINWAY_TEMPO"):
-            try:
-                self.tempo_bpm = float(tempo_env)
-            except ValueError:
-                pass  # Invalid value, keep default
-
-    def _load_from_file(self, path: Path) -> None:
-        """
-        Load configuration from a JSON file.
-        """
-        if path.exists():
-            try:
-                with open(path, 'r') as f:
-                    config_data = json.load(f)
-                
-                # Board type
-                if board_type := config_data.get("board_type"):
-                    try:
-                        self.board_type = BoardType(board_type)
-                    except ValueError:
-                        pass  # Invalid value, keep default
-                
-                # Audio enabled
-                if "audio_enabled" in config_data:
-                    self.audio_enabled = bool(config_data["audio_enabled"])
-                
-                # Generations
-                if generations := config_data.get("generations"):
-                    if isinstance(generations, dict):
-                        if "Limited" in generations:
-                            self.generations = GenerationLimit(generations["Limited"])
-                        elif "Unlimited" in generations:
-                            self.generations = GenerationLimit()
-                    elif generations == "Unlimited":
-                        self.generations = GenerationLimit()
-                    elif isinstance(generations, int):
-                        self.generations = GenerationLimit(generations)
-                
-                # Step delay
-                if "step_delay_ms" in config_data:
-                    self.step_delay_ms = int(config_data["step_delay_ms"])
-                
-                # Tempo
-                if "tempo_bpm" in config_data:
-                    tempo = config_data["tempo_bpm"]
-                    self.tempo_bpm = float(tempo) if tempo is not None else None
-                
-            except (json.JSONDecodeError, TypeError, ValueError) as e:
-                print(f"Error loading config file: {e}")
-
-    def save_to_file(self, path: Path) -> None:
-        """
-        Save configuration to a JSON file.
-        """
-        config_data = {
-            "board_type": self.board_type.value,
-            "audio_enabled": self.audio_enabled,
-            "generations": repr(self.generations),
-            "step_delay_ms": self.step_delay_ms,
-            "tempo_bpm": self.tempo_bpm
-        }
-        
-        with open(path, 'w') as f:
-            json.dump(config_data, f, indent=4)
-
-    @staticmethod
-    def tempo_to_delay_ms(bpm: float) -> int:
-        """
-        Convert tempo in BPM to delay in milliseconds.
-        Uses eighth note subdivision for musical feel.
-        """
-        # BPM = beats per minute, so ms per beat = (60 * 1000) / BPM
-        # Using eighth note subdivision: delay = (60000 / BPM) / 2
-        delay = (60000.0 / bpm) / 2.0
-        return round(delay)
-
     def get_effective_delay(self) -> int:
-        """
-        Get the effective delay in milliseconds, considering tempo if set.
-        """
+        """Get the effective delay in milliseconds based on configuration"""
         if self.tempo_bpm is not None:
-            return self.tempo_to_delay_ms(self.tempo_bpm)
+            # Convert tempo in BPM to delay in ms
+            # 60000 ms in a minute / BPM = ms per beat
+            return int(60000 / self.tempo_bpm)
         return self.step_delay_ms
 
-    def print_config(self) -> None:
-        """
-        Print the current configuration.
-        """
-        print("Configuration:")
-        print(f"  Board Type: {self.board_type.name}")
-        print(f"  Audio Enabled: {self.audio_enabled}")
-        print(f"  Generations: {self.generations}")
-        
-        if self.tempo_bpm is not None:
-            effective_delay = self.get_effective_delay()
-            print(f"  Tempo: {self.tempo_bpm:.1f} BPM ({effective_delay}ms per step)")
-        else:
-            print(f"  Step Delay: {self.step_delay_ms}ms")
-        
-        if self.config_file:
-            print(f"  Config File: {self.config_file}")
-        print()
+def get_config_path() -> Path:
+    """Get the path to the config directory"""
+    # Find config relative to project root
+    base_path = Path(__file__).resolve().parent.parent
+    config_path = base_path / "config" / "python"
+    
+    if not config_path.exists():
+        # Fallback to assuming we're in the project root
+        config_path = Path('.').resolve() / "config" / "python"
+    
+    return config_path
 
+def get_default_config_file() -> Path:
+    """Get the default config file path"""
+    return get_config_path() / 'conways_steinway.properties'
 
-if __name__ == "__main__":
-    # Test the configuration
+def load_config() -> Config:
+    """Load configuration from command-line args, environment variables, and file"""
     config = Config.from_args_and_env()
-    config.print_config()
+    
+    # If no config file was specified, try the default location
+    if config.config_file is None:
+        default_config = get_default_config_file()
+        if default_config.exists():
+            config.config_file = default_config
+            config.load_from_file(default_config)
+    
+    return config
