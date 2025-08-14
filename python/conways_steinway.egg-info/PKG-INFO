@@ -1,3 +1,14 @@
+Metadata-Version: 2.4
+Name: conways-steinway
+Version: 0.1.0
+Summary: Conway's Steinway Python Implementation
+Requires-Python: >=3.13
+Description-Content-Type: text/markdown
+Requires-Dist: pygame>=2.5.0
+Provides-Extra: dev
+Requires-Dist: pytest==8.4.1; extra == "dev"
+Requires-Dist: pytest-asyncio==1.0.0; extra == "dev"
+
 # Python Backend for Conway's Steinway
 
 ## Overview

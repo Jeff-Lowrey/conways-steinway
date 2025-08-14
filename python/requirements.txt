@@ -1,0 +1,10 @@
+# Core dependencies
+pygame>=2.5.0  # For sound output
+
+# Testing dependencies
+pytest==8.4.1  # or the version you have installed
+pytest-asyncio==1.0.0  # or the version you have installed
+
+# Future enhancements (commented out for now)
+# numpy>=1.25.0  # For more efficient board operations if needed
+# matplotlib>=3.7.0  # For visualization if added in the future

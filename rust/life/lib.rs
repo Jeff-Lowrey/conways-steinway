@@ -5,7 +5,7 @@ pub mod game_board;
 pub mod config;
 
 // Load audio modules from sibling folder
-#[path = "../../audio/src/lib.rs"]
+#[path = "../audio/lib.rs"]
 pub mod audio_lib;
 
 // Re-export commonly used types
