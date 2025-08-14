@@ -27,7 +27,7 @@ def get_config_path() -> Path:
 
 def get_default_config_file() -> Path:
     """Get the default config file path"""
-    return get_config_path() / "conways_steinway.toml"
+    return get_config_path() / "conways_steinway.properties"
 
 def ensure_config_in_path():
     """Ensure the config directory is in the Python path"""
