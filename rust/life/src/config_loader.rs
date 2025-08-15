@@ -3,6 +3,7 @@
 
 use std::path::PathBuf;
 use std::env;
+use log::{info, warn, error, debug};
 
 // Re-export Config, BoardType, and GenerationLimit from the config module
 pub use crate::config::{Config, BoardType, GenerationLimit};
@@ -90,9 +91,9 @@ pub fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
                 },
                 Err(e) => {
                     // Fall back to traditional config loading
-                    eprintln!("Note: Using legacy config format. Error with unified format: {}", e);
+                    warn!("Note: Using legacy config format. Error with unified format: {}", e);
                     if let Err(e) = config.load_from_file(&default_config) {
-                        eprintln!("Warning: Error loading default config file: {}", e);
+                        warn!("Warning: Error loading default config file: {}", e);
                     }
                 }
             }

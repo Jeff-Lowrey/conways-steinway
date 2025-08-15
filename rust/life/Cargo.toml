@@ -9,6 +9,8 @@ clap = { version = "4.0", features = ["derive", "env"] }
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.8"
 java-properties = "2.0.0"
+log = "0.4"
+env_logger = "0.10"
 
 [dev-dependencies]
 tempfile = "3.8"

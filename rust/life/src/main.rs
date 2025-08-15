@@ -1,45 +1,50 @@
-// Simple program to verify the audio files are in the correct location
+// Simple test program that verifies logging is working
 
 use std::fs;
 use std::path::Path;
+use log::{info, warn, error, debug, trace};
+use env_logger;
 
 fn main() {
-    println!("Testing audio file locations...");
+    // Initialize logger
+    env_logger::init();
     
-    // Check both the old and new paths
+    info!("Conway's Steinway - Logging Test");
+    debug!("This is a debug message");
+    trace!("This is a trace message");
+    
+    // Check audio paths
     let old_path = "../audio-samples";
     let new_path = "../../static/audio";
     
-    println!("Checking old path: {}", old_path);
+    info!("Checking old path: {}", old_path);
     if Path::new(old_path).exists() {
-        println!("  ✓ Old path exists");
+        info!("  ✓ Old path exists");
         let files = fs::read_dir(old_path).unwrap();
         let count = files.count();
-        println!("  - Contains {} files", count);
+        info!("  - Contains {} files", count);
     } else {
-        println!("  ✗ Old path does not exist");
+        warn!("  ✗ Old path does not exist");
     }
     
-    println!("Checking new path: {}", new_path);
+    info!("Checking new path: {}", new_path);
     if Path::new(new_path).exists() {
-        println!("  ✓ New path exists");
+        info!("  ✓ New path exists");
         let files = fs::read_dir(new_path).unwrap();
         let file_count = files.count();
-        println!("  - Contains {} files", file_count);
+        info!("  - Contains {} files", file_count);
         
         // List some files in the new directory
-        println!("  - Files in new directory:");
+        debug!("  - Files in new directory:");
         for entry in fs::read_dir(new_path).unwrap().take(5) {
             let entry = entry.unwrap();
-            println!("    - {}", entry.file_name().to_string_lossy());
+            debug!("    - {}", entry.file_name().to_string_lossy());
         }
         
-        // In a full test, we would instantiate the AudioEngine here to verify
-        // that it can load files from the new location
-        println!("\nNOTE: AudioEngine would attempt to load samples from: {}", new_path);
+        info!("AudioEngine would attempt to load samples from: {}", new_path);
     } else {
-        println!("  ✗ New path does not exist");
+        error!("  ✗ New path does not exist - critical error");
     }
     
-    println!("Audio file check complete.");
+    info!("Logging test complete. Set RUST_LOG=debug or RUST_LOG=trace to see more messages");
 }
