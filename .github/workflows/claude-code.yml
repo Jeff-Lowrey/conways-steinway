@@ -15,9 +15,9 @@ jobs:
     if: github.repository != 'anthropics/claude-code-action'
     runs-on: ubuntu-latest
     steps:
-      - uses: anthropics/claude-code-action@v1
+      - uses: anthropics/claude-code-action@beta
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
   notify_pr_closed:
     if: >-
@@ -26,10 +26,10 @@ jobs:
       github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - uses: anthropics/claude-code-action@v1
+      - uses: anthropics/claude-code-action@beta
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          comment: |
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          direct_prompt: |
             PR #${{ github.event.pull_request.number }}
             "${{ github.event.pull_request.title }}"
             has been merged.
