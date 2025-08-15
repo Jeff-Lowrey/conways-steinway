@@ -182,6 +182,7 @@ cargo test
 2. **Audio Consistency**: Each implementation should produce similar audio output given the same input
 3. **Performance Analysis**: Compare performance characteristics across language implementations
 4. **Modular Design**: Common components across implementations with language-specific optimizations
+5. **CI/CD Integration**: Automated testing and review workflows for all submitted code
 
 ## Contributing
 
