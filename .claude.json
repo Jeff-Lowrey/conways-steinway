@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Volumes/BigDog/Documents/git/conways-steinway/scripts/pr_status.sh",
+            "command": "${CWD}/.claude/scripts/pr_status.sh",
             "description": "Fetching PR status..."
           }
         ]
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Volumes/BigDog/Documents/git/conways-steinway/scripts/pr_status.sh",
+            "command": "${CWD}/.claude/scripts/pr_status.sh",
             "description": "Fetching PR status..."
           }
         ]
