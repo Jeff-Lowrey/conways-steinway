@@ -4,6 +4,7 @@ use rodio::{Decoder, OutputStream, Sink, Source};
 use std::io::Cursor;
 use std::collections::HashMap;
 use std::fs::File;
+use log::{info, warn, error, debug, trace};
 
 pub trait AudioPlayer {
     fn play_piano_keys(&self, keys: &[usize]);
@@ -22,12 +23,12 @@ pub struct NullAudioEngine;
 impl AudioEngine {
     pub fn new() -> Self {
         let (_stream, stream_handle) = OutputStream::try_default().unwrap_or_else(|_| {
-            println!("Warning: Could not initialize audio stream");
+            warn!("Warning: Could not initialize audio stream");
             OutputStream::try_default().expect("Failed to create fallback audio stream")
         });
         
         let sink = Sink::try_new(&stream_handle).unwrap_or_else(|_| {
-            println!("Warning: Could not create audio sink");
+            warn!("Warning: Could not create audio sink");
             Sink::try_new(&stream_handle).expect("Failed to create fallback audio sink")
         });
         
@@ -82,16 +83,16 @@ impl AudioEngine {
                 if std::io::Read::read_to_end(&mut file, &mut buffer).is_ok() {
                     self.sample_cache.insert(*key, buffer);
                     let note_name = self.key_to_note_name(*key);
-                    println!("Loaded sample for key {} ({}): {}", key, note_name, file_path);
+                    info!("Loaded sample for key {} ({}): {}", key, note_name, file_path);
                 } else {
-                    println!("Failed to read sample file: {}", file_path);
+                    warn!("Failed to read sample file: {}", file_path);
                 }
             } else {
-                println!("Could not find sample file: {}", file_path);
+                warn!("Could not find sample file: {}", file_path);
             }
         }
         
-        println!("Loaded {} piano samples covering chromatic range", self.sample_cache.len());
+        info!("Loaded {} piano samples covering chromatic range", self.sample_cache.len());
         self.print_coverage_analysis();
     }
 
@@ -103,13 +104,13 @@ impl AudioEngine {
     }
 
     fn print_coverage_analysis(&self) {
-        println!("=== Chromatic Coverage Analysis ===");
+        debug!("=== Chromatic Coverage Analysis ===");
         let mut keys: Vec<usize> = self.sample_cache.keys().copied().collect();
         keys.sort();
         
         for &key in &keys {
             let note_name = self.key_to_note_name(key);
-            println!("  {} (key {})", note_name, key);
+            debug!("  {} (key {})", note_name, key);
         }
         
         // Analysis of gaps
@@ -122,15 +123,15 @@ impl AudioEngine {
         }
         
         if !gaps.is_empty() {
-            println!("=== Coverage Gaps (>3 semitones) ===");
+            debug!("=== Coverage Gaps (>3 semitones) ===");
             for (from_key, to_key, gap) in gaps {
-                println!("  {} to {} ({} semitones)", 
+                debug!("  {} to {} ({} semitones)", 
                     self.key_to_note_name(from_key), 
                     self.key_to_note_name(to_key), 
                     gap);
             }
         } else {
-            println!("Excellent chromatic coverage - no major gaps!");
+            debug!("Excellent chromatic coverage - no major gaps!");
         }
     }
 
@@ -199,13 +200,13 @@ impl AudioEngine {
                 
                 // Debug info
                 if (semitone_difference).abs() > 0.1 {
-                    println!("Key {}: using sample {} (shift: {:.1} semitones, vol: {:.2})", 
+                    debug!("Key {}: using sample {} (shift: {:.1} semitones, vol: {:.2})", 
                         key, closest_sample_key, semitone_difference, volume_compensation);
                 }
             }
         } else {
             // This should never happen with our comprehensive sample coverage
-            eprintln!("Critical error: No sample available for key {} - this indicates a problem with sample loading", key);
+            error!("Critical error: No sample available for key {} - this indicates a problem with sample loading", key);
         }
     }
 

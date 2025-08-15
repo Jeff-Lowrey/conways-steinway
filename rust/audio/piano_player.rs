@@ -1,4 +1,5 @@
 use super::audio::{AudioPlayer, AudioEngine, NullAudioEngine};
+use log::{info, debug};
 
 pub struct PlayerPiano {
     audio_engine: Box<dyn AudioPlayer>,
@@ -19,24 +20,24 @@ impl PlayerPiano {
 
     pub fn play_keys(&self, keys: &[usize]) {
         if keys.is_empty() {
-            println!("♪ Silence");
+            info!("♪ Silence");
             return;
         }
 
         // Check if this looks like a chord pattern
         let is_chord = self.is_chord_pattern(keys);
         
-        if is_chord {
-            print!("♫ Playing chord: ");
-        } else {
-            print!("♪ Playing piano keys: ");
+        let mut key_str = String::new();
+        for (i, &key) in keys.iter().enumerate() {
+            if i > 0 { key_str.push_str(", "); }
+            key_str.push_str(&format!("{}", key + 1));
         }
         
-        for (i, &key) in keys.iter().enumerate() {
-            if i > 0 { print!(", "); }
-            print!("{}", key + 1);
+        if is_chord {
+            info!("♫ Playing chord: {}", key_str);
+        } else {
+            info!("♪ Playing piano keys: {}", key_str);
         }
-        println!();
 
         self.audio_engine.play_piano_keys(keys);
     }

@@ -2,6 +2,7 @@ use clap::{Arg, ArgAction, Command, ValueHint};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use log::{info, warn, error, debug};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -177,22 +178,22 @@ impl Config {
     }
 
     pub fn print_config(&self) {
-        println!("Configuration:");
-        println!("  Board Type: {:?}", self.board_type);
-        println!("  Audio Enabled: {}", self.audio_enabled);
-        println!("  Generations: {:?}", self.generations);
+        info!("Configuration:");
+        info!("  Board Type: {:?}", self.board_type);
+        info!("  Audio Enabled: {}", self.audio_enabled);
+        info!("  Generations: {:?}", self.generations);
         
         if let Some(bpm) = self.tempo_bpm {
             let effective_delay = self.get_effective_delay();
-            println!("  Tempo: {:.1} BPM ({}ms per step)", bpm, effective_delay);
+            info!("  Tempo: {:.1} BPM ({}ms per step)", bpm, effective_delay);
         } else {
-            println!("  Step Delay: {}ms", self.step_delay_ms);
+            info!("  Step Delay: {}ms", self.step_delay_ms);
         }
         
         if let Some(ref path) = self.config_file {
-            println!("  Config File: {}", path.display());
+            info!("  Config File: {}", path.display());
         }
-        println!();
+        info!("");
     }
 }
 
