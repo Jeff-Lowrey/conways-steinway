@@ -30,7 +30,8 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           comment: |
-            PR #${{ github.event.pull_request.number }} "${{ github.event.pull_request.title }}"
+            PR #${{ github.event.pull_request.number }}
+            "${{ github.event.pull_request.title }}"
             has been merged.
 
             Branch: ${{ github.event.pull_request.head.ref }}
