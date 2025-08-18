@@ -1,0 +1,19 @@
+[package]
+name = "conways-steinway"
+version = "0.1.0"
+edition = "2021"
+description = "A musical interpretation of Conway's Game of Life using piano sounds"
+authors = ["Conway's Steinway Contributors"]
+
+[dependencies]
+rodio = "0.17"
+clap = { version = "4.0", features = ["derive", "env"] }
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.8"
+java-properties = "2.0.0"
+log = "0.4"
+# Replacing env_logger with log4rs for multi-destination logging
+log4rs = { version = "1.2", features = ["console_appender", "file_appender", "json_encoder"] }
+
+[dev-dependencies]
+tempfile = "3.8"
