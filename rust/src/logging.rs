@@ -20,7 +20,8 @@ use log4rs::{
 use std::path::{Path, PathBuf};
 use std::fs;
 
-use crate::config::{Config as AppConfig, VALID_LOG_LEVELS, DEFAULT_LOG_DIR, DEFAULT_LOG_FILE};
+use crate::config::{Config as AppConfig, VALID_LOG_LEVELS, DEFAULT_LOG_FILE};
+use std::env;
 
 // Default log patterns
 const CONSOLE_PATTERN: &str = "[{h({l})}] {m}{n}";
@@ -154,7 +155,16 @@ fn get_log_file_path(config: &AppConfig) -> PathBuf {
     match &config.log_file_path {
         Some(path) => path.clone(),
         None => {
-            let mut path = PathBuf::from(DEFAULT_LOG_DIR);
+            // Get the project root directory by finding the directory containing the logs folder
+            let mut path = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+            
+            // If we're in the rust directory, go up one level
+            if path.ends_with("rust") {
+                path.pop();
+            }
+            
+            // Add logs directory and file name
+            path.push("logs");
             path.push(DEFAULT_LOG_FILE);
             path
         }

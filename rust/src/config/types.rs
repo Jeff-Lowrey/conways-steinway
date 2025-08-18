@@ -87,8 +87,7 @@ fn default_log_file_count() -> u32 { 5 }
 // Valid log levels that can be used
 pub const VALID_LOG_LEVELS: [&str; 5] = ["trace", "debug", "info", "warn", "error"];
 
-// Default log file path
-pub const DEFAULT_LOG_DIR: &str = "logs";
+// Default log file name
 pub const DEFAULT_LOG_FILE: &str = "conways_steinway.log";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
