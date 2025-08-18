@@ -6,12 +6,14 @@
 /target/
 */target/
 */*/target/
+crates/*/target/
 target/
 debug/
 release/
 
 # Dependency lock files
-Cargo.lock
+# Keep main workspace Cargo.lock but ignore subcrate locks
+/crates/*/Cargo.lock
 */Cargo.lock
 **/Cargo.lock
 
