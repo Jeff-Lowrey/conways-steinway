@@ -1,31 +1,38 @@
 use crate::{GameOfLife, Cell, BOARD_WIDTH, BOARD_HEIGHT};
+use log::{info, debug, trace};
 
 pub struct GameBoard;
 
 impl GameBoard {
     pub fn create_random_board() -> GameOfLife {
+        debug!("Creating random game board");
         let mut game = GameOfLife::new();
         
         // Simple random seeding based on time-like value
         let mut seed = 12345u64;
         
         // Fill board with random cells (about 25% alive)
+        let mut alive_cells = 0;
         for row in 0..BOARD_HEIGHT {
             for col in 0..BOARD_WIDTH {
                 seed = seed.wrapping_mul(1664525).wrapping_add(1013904223);
                 if seed % 4 == 0 {
                     game.set_cell(row, col, Cell::Alive);
+                    alive_cells += 1;
                 }
             }
         }
         
+        debug!("Random board created with {} alive cells", alive_cells);
         game
     }
     
     pub fn create_complex_board() -> GameOfLife {
+        debug!("Creating complex game board with predefined patterns");
         let mut game = GameOfLife::new();
         
         // Add multiple gliders at different positions
+        debug!("Adding gliders to complex board");
         Self::create_glider(&mut game, 0, 0);
         Self::create_glider(&mut game, 5, 20);
         Self::create_glider(&mut game, 10, 40);
@@ -40,29 +47,35 @@ impl GameBoard {
         Self::create_glider(&mut game, 28, 65);
         
         // Add oscillators
+        debug!("Adding oscillators to complex board");
         Self::create_blinker(&mut game, 5, 5);
         Self::create_toad(&mut game, 12, 30);
         Self::create_beacon(&mut game, 25, 5);
         Self::create_pentadecathlon(&mut game, 1, 34);
         
         // Add still lifes
+        debug!("Adding still lifes to complex board");
         Self::create_block(&mut game, 15, 75);
         Self::create_beehive(&mut game, 10, 50);
         Self::create_loaf(&mut game, 18, 45);
         Self::create_boat(&mut game, 34, 25);
         
         // Add methuselah patterns
+        debug!("Adding methuselah patterns to complex board");
         Self::create_r_pentomino(&mut game, 6, 55);
         Self::create_diehard(&mut game, 18, 15);
         Self::create_acorn(&mut game, 32, 35);
         
         // Add spaceships
+        debug!("Adding spaceships to complex board");
         Self::create_lwss(&mut game, 35, 60);
         
+        debug!("Complex board creation complete");
         game
     }
     
     pub fn add_random_row(game: &mut GameOfLife) {
+        trace!("Adding random top row, generation: {}", game.generation());
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
         
@@ -71,14 +84,18 @@ impl GameBoard {
         let seed = hasher.finish();
         
         let mut rng_state = seed;
+        let mut alive_count = 0;
         for col in 0..BOARD_WIDTH {
             rng_state = rng_state.wrapping_mul(1664525).wrapping_add(1013904223);
-            game.set_cell(0, col, if (rng_state % 5) == 0 {
+            let cell = if (rng_state % 5) == 0 {
+                alive_count += 1;
                 Cell::Alive
             } else {
                 Cell::Dead
-            });
+            };
+            game.set_cell(0, col, cell);
         }
+        trace!("Added random top row with {} alive cells", alive_count);
     }
     
     pub fn from_pattern(pattern: &[&str]) -> GameOfLife {
@@ -100,11 +117,16 @@ impl GameBoard {
     }
     
     pub fn get_bottom_row_and_advance(game: &mut GameOfLife) -> Vec<usize> {
+        debug!("Getting bottom row and advancing board, generation: {}", game.generation());
+        
         let bottom_row_keys: Vec<usize> = (0..BOARD_WIDTH)
             .filter(|&col| game.get_cell(BOARD_HEIGHT - 1, col) == Cell::Alive)
             .collect();
 
+        trace!("Bottom row has {} active cells: {:?}", bottom_row_keys.len(), bottom_row_keys);
+
         // Shift board down (remove bottom row, add empty row at top)
+        trace!("Shifting board down one row");
         for row in (1..BOARD_HEIGHT).rev() {
             for col in 0..BOARD_WIDTH {
                 let cell = game.get_cell(row - 1, col);
@@ -118,8 +140,10 @@ impl GameBoard {
         }
         
         Self::add_random_row(game);
+        trace!("Calculating next generation");
         game.next_generation();
         
+        debug!("Board advanced to generation: {}", game.generation());
         bottom_row_keys
     }
     

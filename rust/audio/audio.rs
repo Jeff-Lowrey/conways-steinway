@@ -4,6 +4,11 @@ use rodio::{Decoder, OutputStream, Sink, Source};
 use std::io::Cursor;
 use std::collections::HashMap;
 use std::fs::File;
+use std::path::{Path, PathBuf};
+use log::{info, warn, error, debug, trace};
+
+// Define constant for audio samples path
+const AUDIO_SAMPLES_PATH: &str = "static/audio";
 
 pub trait AudioPlayer {
     fn play_piano_keys(&self, keys: &[usize]);
@@ -22,19 +27,19 @@ pub struct NullAudioEngine;
 impl AudioEngine {
     pub fn new() -> Self {
         let (_stream, stream_handle) = OutputStream::try_default().unwrap_or_else(|_| {
-            println!("Warning: Could not initialize audio stream");
+            warn!("Warning: Could not initialize audio stream");
             OutputStream::try_default().expect("Failed to create fallback audio stream")
         });
         
         let sink = Sink::try_new(&stream_handle).unwrap_or_else(|_| {
-            println!("Warning: Could not create audio sink");
+            warn!("Warning: Could not create audio sink");
             Sink::try_new(&stream_handle).expect("Failed to create fallback audio sink")
         });
         
         let mut engine = AudioEngine { 
             _stream, 
             sink, 
-            sample_cache: HashMap::new() 
+            sample_cache: HashMap::new()
         };
         
         // Load piano samples
@@ -47,51 +52,56 @@ impl AudioEngine {
         // Piano key mapping: A0=0, A#0=1, B0=2, C1=3, C#1=4, D1=5, D#1=6, E1=7, F1=8, F#1=9, G1=10, G#1=11, A1=12...
         let sample_files = [
             // Low range (Octave 1 & 2)
-            (9, "../../static/audio/piano_a1.wav"),     // A1 (key 9)
-            (21, "../../static/audio/piano_a2.wav"),    // A2 (key 21)
-            (24, "../../static/audio/piano_c2.wav"),    // C2 (key 24)
+            (9, "piano_a1.wav"),     // A1 (key 9)
+            (21, "piano_a2.wav"),    // A2 (key 21)
+            (24, "piano_c2.wav"),    // C2 (key 24)
             
             // Mid-low range (Octave 3) - Better chromatic coverage
-            (36, "../../static/audio/piano_c3.wav"),    // C3 (key 36)
-            (38, "../../static/audio/piano_d3.wav"),    // D3 (key 38)
-            (41, "../../static/audio/piano_f3.wav"),    // F3 (key 41)
-            (43, "../../static/audio/piano_g3.wav"),    // G3 (key 43)
+            (36, "piano_c3.wav"),    // C3 (key 36)
+            (38, "piano_d3.wav"),    // D3 (key 38)
+            (41, "piano_f3.wav"),    // F3 (key 41)
+            (43, "piano_g3.wav"),    // G3 (key 43)
             
             // Mid range (Octave 4) - Even better coverage
-            (48, "../../static/audio/piano_c4_ivory.wav"), // C4 - Middle C (key 48) - Best quality
-            (50, "../../static/audio/piano_d4.wav"),    // D4 (key 50)
-            (53, "../../static/audio/piano_f4.wav"),    // F4 (key 53)
-            (55, "../../static/audio/piano_g4.wav"),    // G4 (key 55)
+            (48, "piano_c4_ivory.wav"), // C4 - Middle C (key 48) - Best quality
+            (50, "piano_d4.wav"),    // D4 (key 50)
+            (53, "piano_f4.wav"),    // F4 (key 53)
+            (55, "piano_g4.wav"),    // G4 (key 55)
             
             // Alternative samples for comparison/backup
-            (36, "../../static/audio/piano_c3_kawai.wav"), // Alternative C3
-            (48, "../../static/audio/piano_c4.wav"),    // Alternative C4
-            (48, "../../static/audio/piano_c4_kawai.wav"), // Another C4 option
+            (36, "piano_c3_kawai.wav"), // Alternative C3
+            (48, "piano_c4.wav"),    // Alternative C4
+            (48, "piano_c4_kawai.wav"), // Another C4 option
             
             // Upper-mid range (Octave 5)
-            (60, "../../static/audio/piano_c5.wav"),    // C5 (key 60)
+            (60, "piano_c5.wav"),    // C5 (key 60)
             
             // High range (Octave 6 & 7)
-            (72, "../../static/audio/piano_c6.wav"),    // C6 (key 72)
-            (84, "../../static/audio/piano_c7.wav"),    // C7 (key 84)
+            (72, "piano_c6.wav"),    // C6 (key 72)
+            (84, "piano_c7.wav"),    // C7 (key 84)
         ];
+        
+        // Log the audio path being used
+        info!("Loading audio samples from path: {}", AUDIO_SAMPLES_PATH);
 
-        for (key, file_path) in sample_files.iter() {
-            if let Ok(mut file) = File::open(file_path) {
+        for (key, file_name) in sample_files.iter() {
+            // Construct the full path
+            let full_path = Path::new(AUDIO_SAMPLES_PATH).join(file_name);
+            if let Ok(mut file) = File::open(&full_path) {
                 let mut buffer = Vec::new();
                 if std::io::Read::read_to_end(&mut file, &mut buffer).is_ok() {
                     self.sample_cache.insert(*key, buffer);
                     let note_name = self.key_to_note_name(*key);
-                    println!("Loaded sample for key {} ({}): {}", key, note_name, file_path);
+                    info!("Loaded sample for key {} ({}): {}", key, note_name, full_path.display());
                 } else {
-                    println!("Failed to read sample file: {}", file_path);
+                    warn!("Failed to read sample file: {}", full_path.display());
                 }
             } else {
-                println!("Could not find sample file: {}", file_path);
+                warn!("Could not find sample file: {}", full_path.display());
             }
         }
         
-        println!("Loaded {} piano samples covering chromatic range", self.sample_cache.len());
+        info!("Loaded {} piano samples covering chromatic range", self.sample_cache.len());
         self.print_coverage_analysis();
     }
 
@@ -103,13 +113,13 @@ impl AudioEngine {
     }
 
     fn print_coverage_analysis(&self) {
-        println!("=== Chromatic Coverage Analysis ===");
+        debug!("=== Chromatic Coverage Analysis ===");
         let mut keys: Vec<usize> = self.sample_cache.keys().copied().collect();
         keys.sort();
         
         for &key in &keys {
             let note_name = self.key_to_note_name(key);
-            println!("  {} (key {})", note_name, key);
+            debug!("  {} (key {})", note_name, key);
         }
         
         // Analysis of gaps
@@ -122,15 +132,15 @@ impl AudioEngine {
         }
         
         if !gaps.is_empty() {
-            println!("=== Coverage Gaps (>3 semitones) ===");
+            debug!("=== Coverage Gaps (>3 semitones) ===");
             for (from_key, to_key, gap) in gaps {
-                println!("  {} to {} ({} semitones)", 
+                debug!("  {} to {} ({} semitones)", 
                     self.key_to_note_name(from_key), 
                     self.key_to_note_name(to_key), 
                     gap);
             }
         } else {
-            println!("Excellent chromatic coverage - no major gaps!");
+            debug!("Excellent chromatic coverage - no major gaps!");
         }
     }
 
@@ -199,13 +209,13 @@ impl AudioEngine {
                 
                 // Debug info
                 if (semitone_difference).abs() > 0.1 {
-                    println!("Key {}: using sample {} (shift: {:.1} semitones, vol: {:.2})", 
+                    debug!("Key {}: using sample {} (shift: {:.1} semitones, vol: {:.2})", 
                         key, closest_sample_key, semitone_difference, volume_compensation);
                 }
             }
         } else {
             // This should never happen with our comprehensive sample coverage
-            eprintln!("Critical error: No sample available for key {} - this indicates a problem with sample loading", key);
+            error!("Critical error: No sample available for key {} - this indicates a problem with sample loading", key);
         }
     }
 

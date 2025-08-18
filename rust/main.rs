@@ -1,13 +1,16 @@
 use std::fmt;
 use std::thread;
 use std::time::Duration;
+use log::{info, warn, error, debug, trace};
+use env_logger;
 
 // Load modules from life folder
 #[path = "life/game_board.rs"]
 mod game_board;
 use game_board::GameBoard;
 
-#[path = "life/config.rs"]
+// Use the consolidated config module
+#[path = "config/mod.rs"]
 mod config;
 use config::{Config, BoardType, GenerationLimit};
 
@@ -188,11 +191,8 @@ impl fmt::Display for GameOfLife {
 
 
 fn main() {
-    println!("Conway's Steinway - Rust Implementation");
-    println!("======================================");
-
-    // Load configuration from all sources
-    let config = match Config::from_args_and_env() {
+    // Load configuration first to get log level
+    let pre_config = match Config::from_args_and_env() {
         Ok(config) => config,
         Err(e) => {
             eprintln!("Error loading configuration: {}", e);
@@ -200,20 +200,39 @@ fn main() {
         }
     };
 
+    // Set log level from configuration if not specified in environment
+    if std::env::var("RUST_LOG").is_err() {
+        std::env::set_var("RUST_LOG", &pre_config.log_level);
+    }
+
+    // Initialize logger with the configured log level
+    // NOTE: For runtime log level changes, consider using a different logging framework like log4rs
+    // that supports reconfiguration at runtime, or implementing a custom filter that can be
+    // modified during program execution.
+    env_logger::Builder::from_env(env_logger::Env::default())
+        .format_timestamp(Some(env_logger::fmt::TimestampPrecision::Seconds))
+        .init();
+    
+    info!("Conway's Steinway - Rust Implementation");
+    info!("======================================");
+    debug!("Initialized with log level: {}", std::env::var("RUST_LOG").unwrap_or_else(|_| pre_config.log_level.clone()));
+
+    // Use the already loaded configuration
+    let mut config = pre_config;
+
     // Apply board-specific configuration - Für Elise gets special treatment
-    let mut config = config;
     match config.board_type {
         BoardType::FurElise => {
             // Always use 80 generations for complete musical experience
             if !matches!(config.generations, GenerationLimit::Limited(80)) {
-                println!("Für Elise always uses 80 generations for complete musical experience (ignoring --generations flag)");
+                info!("Für Elise always uses 80 generations for complete musical experience (ignoring --generations flag)");
             }
             config.generations = GenerationLimit::Limited(80);
             
             // Set appropriate musical tempo if not explicitly set
             if config.tempo_bpm.is_none() {
                 config.tempo_bpm = Some(126.0); // Für Elise typical tempo
-                println!("Setting Für Elise tempo to 126 BPM for authentic musical timing");
+                info!("Setting Für Elise tempo to 126 BPM for authentic musical timing");
             }
         },
         _ => {
@@ -227,15 +246,15 @@ fn main() {
     // Initialize the game board based on configuration
     let mut game = match config.board_type {
         BoardType::Static => {
-            println!("Using complex predefined patterns");
+            info!("Using complex predefined patterns");
             GameBoard::create_complex_board()
         },
         BoardType::FurElise => {
-            println!("Using Für Elise melody configuration");
+            info!("Using Für Elise melody configuration");
             GameBoard::create_fur_elise_board()
         },
         BoardType::Random => {
-            println!("Using random board configuration");
+            info!("Using random board configuration");
             GameBoard::create_random_board()
         }
     };
@@ -260,8 +279,8 @@ fn main() {
         step += 1;
         
         match config.generations {
-            GenerationLimit::Limited(max) => println!("\nStep {} of {}", step, max),
-            GenerationLimit::Unlimited => println!("\nStep {} (unlimited)", step),
+            GenerationLimit::Limited(max) => info!("\nStep {} of {}", step, max),
+            GenerationLimit::Unlimited => info!("\nStep {} (unlimited)", step),
         }
         
         let piano_keys = GameBoard::get_bottom_row_and_advance(&mut game);
@@ -270,14 +289,14 @@ fn main() {
         // Use configured delay between steps (respects tempo if set)
         thread::sleep(Duration::from_millis(config.get_effective_delay()));
         
-        println!("\n{}", game);
+        info!("\n{}", game);
 
         // For unlimited generations, allow graceful interruption
         if matches!(config.generations, GenerationLimit::Unlimited) && step % 100 == 0 {
-            println!("(Press Ctrl+C to stop after {} steps)", step);
+            info!("(Press Ctrl+C to stop after {} steps)", step);
         }
     }
     
-    println!("\nSimulation completed after {} generations", step);
-    println!("Final generation: {}", game.generation());
+    info!("\nSimulation completed after {} generations", step);
+    info!("Final generation: {}", game.generation());
 }

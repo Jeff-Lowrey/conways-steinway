@@ -9,12 +9,13 @@ use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::collections::HashMap;
 use java_properties;
+use log::{info, warn, error, debug};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub board_type: BoardType,
-    #[serde(alias = "audio_enabled")]
-    pub silent: bool,
+    #[serde(alias = "silent")]
+    pub audio_enabled: bool,
     pub generations: GenerationLimit,
     pub step_delay_ms: u64,
     pub tempo_bpm: Option<f64>,
@@ -42,6 +43,10 @@ pub struct Config {
     
     // Board dimensions (fixed)
     pub board_height: Option<usize>,
+    
+    // Logging configuration
+    #[serde(default = "default_log_level")]
+    pub log_level: String,
 }
 
 // Default functions for optional fields
@@ -53,6 +58,10 @@ fn default_detect_chords() -> bool { true }
 fn default_volume() -> f32 { 0.6 }
 fn default_pitch_shift() -> bool { true }
 fn default_alive_probability() -> f32 { 0.2 }
+fn default_log_level() -> String { "info".to_string() }
+
+// Valid log levels that can be used
+pub const VALID_LOG_LEVELS: [&str; 5] = ["trace", "debug", "info", "warn", "error"];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BoardType {
@@ -73,7 +82,7 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             board_type: BoardType::Random,
-            silent: false,
+            audio_enabled: true,
             generations: GenerationLimit::Unlimited,
             step_delay_ms: 200,
             tempo_bpm: None, // Will be set based on board type
@@ -93,6 +102,9 @@ impl Default for Config {
             
             // Board dimensions (fixed)
             board_height: Some(40),
+            
+            // Logging configuration
+            log_level: default_log_level(),
         }
     }
 }
@@ -203,7 +215,13 @@ impl Config {
                 .value_name("CELLS")
                 .help("Board height in cells")
                 .value_parser(clap::value_parser!(usize))
-                .env("CONWAYS_STEINWAY_BOARD_HEIGHT"));
+                .env("CONWAYS_STEINWAY_BOARD_HEIGHT"))
+            .arg(Arg::new("log-level")
+                .long("log-level")
+                .value_name("LEVEL")
+                .help("Log level (trace, debug, info, warn, error)")
+                .value_parser(["trace", "debug", "info", "warn", "error"])
+                .env("RUST_LOG"));
 
         let matches = app.get_matches();
 
@@ -225,10 +243,10 @@ impl Config {
             };
         }
 
-        // Audio is enabled by default (silent=false)
-        // Only set silent=true if the --silent flag is present
+        // Audio is enabled by default (audio_enabled=true)
+        // Set audio_enabled=false if the --silent flag is present
         if matches.get_flag("silent") {
-            config.silent = true;
+            config.audio_enabled = false;
         }
 
         if let Some(&generations) = matches.get_one::<u32>("generations") {
@@ -289,6 +307,12 @@ impl Config {
         if let Some(&height) = matches.get_one::<usize>("height") {
             config.board_height = Some(height);
         }
+        
+        // Logging configuration
+        if let Some(log_level) = matches.get_one::<String>("log-level") {
+            // No need to validate here since we've already restricted the input with value_parser
+            config.log_level = log_level.to_string();
+        }
 
         Ok(config)
     }
@@ -303,7 +327,8 @@ impl Config {
         if path.exists() {
             // First check if 'silent' key exists in raw file
             let contents = fs::read_to_string(path)?;
-            self.silent = contents.contains("silent");
+            let is_silent = contents.contains("silent") || contents.contains("audio.enabled=false");
+            self.audio_enabled = !is_silent;
             
             // Parse the properties file
             let properties = Self::parse_properties_file(path)?;
@@ -317,6 +342,11 @@ impl Config {
                     "showcase" => BoardType::Showcase,
                     _ => BoardType::Random,
                 };
+            }
+            
+            // Check for audio.enabled setting
+            if let Some(audio_enabled) = properties.get("audio.enabled") {
+                self.audio_enabled = audio_enabled.to_lowercase() == "true";
             }
             
             // Parse generations
@@ -405,6 +435,18 @@ impl Config {
             if let Some(height_str) = properties.get("board.height") {
                 if let Ok(height) = height_str.parse::<usize>() {
                     self.board_height = Some(height);
+                }
+            }
+            
+            // Parse logging configuration
+            if let Some(log_level) = properties.get("log.level") {
+                // Validate log level
+                let log_level = log_level.to_lowercase();
+                if VALID_LOG_LEVELS.contains(&log_level.as_str()) {
+                    self.log_level = log_level;
+                } else {
+                    warn!("Invalid log level '{}' in config file. Using default: {}", 
+                          log_level, self.log_level);
                 }
             }
         }
