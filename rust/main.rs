@@ -9,7 +9,8 @@ use env_logger;
 mod game_board;
 use game_board::GameBoard;
 
-#[path = "life/config.rs"]
+// Use the consolidated config module
+#[path = "config/mod.rs"]
 mod config;
 use config::{Config, BoardType, GenerationLimit};
 
@@ -190,35 +191,34 @@ impl fmt::Display for GameOfLife {
 
 
 fn main() {
-    // Initialize logger with default setting
-    if std::env::var("RUST_LOG").is_err() {
-        std::env::set_var("RUST_LOG", "info");
-    }
-    env_logger::init();
-    
-    info!("Conway's Steinway - Rust Implementation");
-    info!("======================================");
-
-    // Load configuration from all sources
-    let mut config = match Config::from_args_and_env() {
-        Ok(config) => {
-            debug!("Loaded configuration successfully");
-            config
-        },
+    // Load configuration first to get log level
+    let pre_config = match Config::from_args_and_env() {
+        Ok(config) => config,
         Err(e) => {
-            error!("Error loading configuration: {}", e);
+            eprintln!("Error loading configuration: {}", e);
             std::process::exit(1);
         }
     };
-    
-    // Update the logger with the configured log level
-    if std::env::var("RUST_LOG").is_ok() {
-        debug!("Using environment-specified log level");
-    } else {
-        debug!("Setting log level to: {}", config.log_level);
-        // Note: We can't change the logger after it's initialized,
-        // but we can note the configured level for next run
+
+    // Set log level from configuration if not specified in environment
+    if std::env::var("RUST_LOG").is_err() {
+        std::env::set_var("RUST_LOG", &pre_config.log_level);
     }
+
+    // Initialize logger with the configured log level
+    // NOTE: For runtime log level changes, consider using a different logging framework like log4rs
+    // that supports reconfiguration at runtime, or implementing a custom filter that can be
+    // modified during program execution.
+    env_logger::Builder::from_env(env_logger::Env::default())
+        .format_timestamp(Some(env_logger::fmt::TimestampPrecision::Seconds))
+        .init();
+    
+    info!("Conway's Steinway - Rust Implementation");
+    info!("======================================");
+    debug!("Initialized with log level: {}", std::env::var("RUST_LOG").unwrap_or_else(|_| pre_config.log_level.clone()));
+
+    // Use the already loaded configuration
+    let mut config = pre_config;
 
     // Apply board-specific configuration - Für Elise gets special treatment
     match config.board_type {
