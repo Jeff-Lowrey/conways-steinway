@@ -1,0 +1,13 @@
+[package]
+name = "logging"
+version = "0.1.0"
+edition = "2021"
+description = "Logging module for Conway's Steinway"
+
+[dependencies]
+log = "0.4"
+log4rs = { version = "1.2", features = ["console_appender", "file_appender", "json_encoder"] }
+config = { path = "../config" }
+
+[dev-dependencies]
+tempfile = "3.8"
