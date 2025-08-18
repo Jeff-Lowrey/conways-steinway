@@ -87,8 +87,9 @@ fn default_log_file_count() -> u32 { 5 }
 // Valid log levels that can be used
 pub const VALID_LOG_LEVELS: [&str; 5] = ["trace", "debug", "info", "warn", "error"];
 
-// Default log file name
+// Default log file name and subdirectory
 pub const DEFAULT_LOG_FILE: &str = "conways_steinway.log";
+pub const DEFAULT_LOG_SUBDIR: &str = "backend";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BoardType {
@@ -735,7 +736,7 @@ impl Config {
             if let Some(ref path) = self.log_file_path {
                 println!("    Log File: {}", path.display());
             } else {
-                println!("    Log File: {}/{}", DEFAULT_LOG_DIR, DEFAULT_LOG_FILE);
+                println!("    Log File: logs/{}/{}", DEFAULT_LOG_SUBDIR, DEFAULT_LOG_FILE);
             }
             println!("    File Log Level: {}", self.log_file_level);
             println!("    Console Log Level: {}", self.log_console_level);

@@ -20,7 +20,7 @@ use log4rs::{
 use std::path::{Path, PathBuf};
 use std::fs;
 
-use crate::config::{Config as AppConfig, VALID_LOG_LEVELS, DEFAULT_LOG_FILE};
+use crate::config::{Config as AppConfig, VALID_LOG_LEVELS, DEFAULT_LOG_FILE, DEFAULT_LOG_SUBDIR};
 use std::env;
 
 // Default log patterns
@@ -163,8 +163,9 @@ fn get_log_file_path(config: &AppConfig) -> PathBuf {
                 path.pop();
             }
             
-            // Add logs directory and file name
+            // Add logs directory, backend subdirectory, and file name
             path.push("logs");
+            path.push(DEFAULT_LOG_SUBDIR);
             path.push(DEFAULT_LOG_FILE);
             path
         }

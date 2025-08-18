@@ -105,7 +105,7 @@ The application supports logging to multiple destinations (console and file) wit
 ```
 
 By default, when file logging is enabled:
-- Log files are stored in the project root `logs/` directory
+- Log files are stored in the project root `logs/backend/` directory
 - Log files are rotated when they reach 10 MB
 - Up to 5 rotated log files are kept
 - Console log level is set to `info`
