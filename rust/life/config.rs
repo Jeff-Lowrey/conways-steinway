@@ -36,6 +36,9 @@ fn default_log_level() -> String {
     "info".to_string()
 }
 
+// Valid log levels that can be used
+const VALID_LOG_LEVELS: [&str; 5] = ["trace", "debug", "info", "warn", "error"];
+
 impl Default for Config {
     fn default() -> Self {
         Config {
@@ -148,6 +151,7 @@ impl Config {
         
         // Parse log level if specified
         if let Some(log_level) = matches.get_one::<String>("log-level") {
+            // No need to validate here since we've already restricted the input with value_parser
             config.log_level = log_level.to_string();
         }
 
@@ -174,7 +178,14 @@ impl Config {
             
             // Set new configuration options if they're in the config file
             if !file_config.log_level.is_empty() {
-                self.log_level = file_config.log_level;
+                // Validate log level
+                let log_level = file_config.log_level.to_lowercase();
+                if VALID_LOG_LEVELS.contains(&log_level.as_str()) {
+                    self.log_level = log_level;
+                } else {
+                    warn!("Invalid log level '{}' in config file. Using default: {}", 
+                          file_config.log_level, self.log_level);
+                }
             }
         }
         Ok(())
