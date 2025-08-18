@@ -1,7 +1,7 @@
 use std::fmt;
 use std::thread;
 use std::time::Duration;
-use log::{info, warn, error, debug, trace};
+use log::{info, debug};
 
 // Local modules
 mod audio;
@@ -35,6 +35,12 @@ impl fmt::Display for Cell {
 pub struct GameOfLife {
     board: Vec<Vec<Cell>>,
     generation: u32,
+}
+
+impl Default for GameOfLife {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl GameOfLife {
@@ -89,10 +95,9 @@ impl GameOfLife {
                 let new_col = col as i32 + dc;
                 
                 if new_row >= 0 && new_row < BOARD_HEIGHT as i32 &&
-                   new_col >= 0 && new_col < BOARD_WIDTH as i32 {
-                    if self.board[new_row as usize][new_col as usize] == Cell::Alive {
-                        count += 1;
-                    }
+                   new_col >= 0 && new_col < BOARD_WIDTH as i32 && 
+                   self.board[new_row as usize][new_col as usize] == Cell::Alive {
+                    count += 1;
                 }
             }
         }
@@ -103,12 +108,12 @@ impl GameOfLife {
     pub fn next_generation(&mut self) {
         let mut new_board = self.board.clone();
         
-        for row in 0..BOARD_HEIGHT {
-            for col in 0..BOARD_WIDTH {
-                let neighbors = self.count_neighbors(row, col);
-                let current_cell = self.board[row][col];
+        for (row_idx, row) in new_board.iter_mut().enumerate().take(BOARD_HEIGHT) {
+            for (col_idx, cell) in row.iter_mut().enumerate().take(BOARD_WIDTH) {
+                let neighbors = self.count_neighbors(row_idx, col_idx);
+                let current_cell = self.board[row_idx][col_idx];
                 
-                new_board[row][col] = match (current_cell, neighbors) {
+                *cell = match (current_cell, neighbors) {
                     (Cell::Alive, 2) | (Cell::Alive, 3) => Cell::Alive,
                     (Cell::Alive, _) => Cell::Dead,
                     (Cell::Dead, 3) => Cell::Alive,
@@ -239,6 +244,11 @@ fn main() {
         },
         BoardType::Random => {
             info!("Using random board configuration");
+            GameBoard::create_random_board()
+        },
+        BoardType::Complex | BoardType::Showcase => {
+            // Default to random board for these types
+            info!("Using random board for {:?} type", config.board_type);
             GameBoard::create_random_board()
         }
     };

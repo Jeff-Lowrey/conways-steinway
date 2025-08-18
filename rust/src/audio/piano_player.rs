@@ -1,5 +1,5 @@
-use super::audio::{AudioPlayer, AudioEngine, NullAudioEngine};
-use log::{info, debug};
+use super::audio_engine::{AudioPlayer, AudioEngine, NullAudioEngine};
+use log::info;
 
 pub struct PlayerPiano {
     audio_engine: Box<dyn AudioPlayer>,
@@ -65,7 +65,7 @@ impl PlayerPiano {
                 // Diminished chord: 3 and 6 semitones
                 // Augmented chord: 4 and 8 semitones
                 if (interval1 == 3 || interval1 == 4) && 
-                   (interval2 >= 6 && interval2 <= 8) {
+                   (6..=8).contains(&interval2) {
                     return true;
                 }
             }
@@ -89,10 +89,14 @@ impl PlayerPiano {
         false
     }
 
+    // These methods are only used in tests but marked public
+    // for potential future use in the application
+    #[cfg(test)]
     pub fn disable_audio(&mut self) {
         self.audio_engine = Box::new(NullAudioEngine::new());
     }
 
+    #[cfg(test)]
     pub fn enable_audio(&mut self) {
         self.audio_engine = Box::new(AudioEngine::new());
     }

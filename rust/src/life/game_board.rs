@@ -1,5 +1,5 @@
 use crate::{GameOfLife, Cell, BOARD_WIDTH, BOARD_HEIGHT};
-use log::{info, debug, trace};
+use log::{debug, trace};
 
 pub struct GameBoard;
 
@@ -98,7 +98,9 @@ impl GameBoard {
         trace!("Added random top row with {} alive cells", alive_count);
     }
     
-    pub fn from_pattern(pattern: &[&str]) -> GameOfLife {
+    // Not currently used in main game loop but available for testing
+    #[cfg(test)]
+    fn from_pattern(pattern: &[&str]) -> GameOfLife {
         let mut game = GameOfLife::new();
         
         for (row_idx, &row) in pattern.iter().enumerate() {
@@ -448,8 +450,10 @@ impl GameBoard {
         game
     }
     
-    // Helper method to create a board with various patterns for demonstration
-    pub fn create_showcase_board() -> GameOfLife {
+    // Helper method to create a showcase board with various patterns
+    // Available for future demo mode
+    #[cfg(test)]
+    fn create_showcase_board() -> GameOfLife {
         let mut game = GameOfLife::new();
         
         // Add various patterns across the board

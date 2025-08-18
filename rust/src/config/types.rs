@@ -5,12 +5,12 @@
 use clap::{Arg, ArgAction, Command, ValueHint};
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::io::{BufRead, BufReader};
+use std::io::BufReader;
 use std::path::PathBuf;
 use std::collections::HashMap;
 use java_properties;
-use log::{info, warn, error, debug};
-use std::path::Path;
+use log::warn;
+// Path is used in implementation
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -50,6 +50,10 @@ pub struct Config {
     pub log_level: String,
     
     // Multi-destination logging settings
+    #[serde(default = "default_log_destinations")]
+    pub log_destinations: Vec<LogDestination>,
+    
+    // Legacy logging settings (for backward compatibility)
     #[serde(default = "default_log_to_file")]
     pub log_to_file: bool,
     #[serde(default = "default_log_file_path")]
@@ -83,6 +87,18 @@ fn default_log_console_level() -> String { "info".to_string() }
 fn default_log_file_rotation() -> bool { true }
 fn default_log_file_size_limit() -> u64 { 10 * 1024 * 1024 } // 10 MB
 fn default_log_file_count() -> u32 { 5 }
+fn default_log_destinations() -> Vec<LogDestination> { 
+    vec![
+        LogDestination {
+            name: "console".to_string(),
+            destination_type: LogDestinationType::Console,
+            level: "info".to_string(),
+            pattern: None,
+            file_path: None,
+            rotation: None,
+        }
+    ]
+}
 
 // Valid log levels that can be used
 pub const VALID_LOG_LEVELS: [&str; 5] = ["trace", "debug", "info", "warn", "error"];
@@ -90,6 +106,43 @@ pub const VALID_LOG_LEVELS: [&str; 5] = ["trace", "debug", "info", "warn", "erro
 // Default log file name and subdirectory
 pub const DEFAULT_LOG_FILE: &str = "conways_steinway.log";
 pub const DEFAULT_LOG_SUBDIR: &str = "backend";
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum LogDestinationType {
+    Console,
+    File,
+    Json,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LogRotationConfig {
+    pub enabled: bool,
+    #[serde(default = "default_log_file_size_limit")]
+    pub size_limit: u64,
+    #[serde(default = "default_log_file_count")]
+    pub file_count: u32,
+}
+
+impl Default for LogRotationConfig {
+    fn default() -> Self {
+        LogRotationConfig {
+            enabled: true,
+            size_limit: default_log_file_size_limit(),
+            file_count: default_log_file_count(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LogDestination {
+    pub name: String,
+    pub destination_type: LogDestinationType,
+    #[serde(default = "default_log_level")]
+    pub level: String,
+    pub pattern: Option<String>,
+    pub file_path: Option<PathBuf>,
+    pub rotation: Option<LogRotationConfig>,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BoardType {
@@ -133,6 +186,7 @@ impl Default for Config {
             
             // Logging configuration
             log_level: default_log_level(),
+            log_destinations: default_log_destinations(),
             log_to_file: default_log_to_file(),
             log_file_path: default_log_file_path(),
             log_file_level: default_log_file_level(),
@@ -618,12 +672,11 @@ impl Config {
         Ok(properties)
     }
 
-    pub fn save_to_file(&self, path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
-        // Create a new properties map
-        let mut props = java_properties::PropertiesWriter::new();
-        
-        // Add comments for sections
-        props.set_comment("Conway's Steinway Configuration File\nGenerated automatically\n\n----- Core Configuration -----");
+    // Helper function to save configuration to a file
+    #[cfg(test)]
+    fn save_to_file(&self, path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+        // Create properties hashmap
+        let mut props = std::collections::HashMap::new();
         
         // Core configuration
         let board_type_str = match self.board_type {
@@ -633,49 +686,46 @@ impl Config {
             BoardType::Complex => "complex",
             BoardType::Showcase => "showcase",
         };
-        props.set("board.type", board_type_str);
+        props.insert("board.type".to_string(), board_type_str.to_string());
         
-        if self.silent {
-            props.set("silent", "");
+        if !self.audio_enabled {
+            props.insert("silent".to_string(), "".to_string());
         }
         
         let generations_str = match self.generations {
             GenerationLimit::Unlimited => "unlimited".to_string(),
             GenerationLimit::Limited(n) => n.to_string(),
         };
-        props.set("generations", generations_str);
+        props.insert("generations".to_string(), generations_str);
         
-        props.set("step.delay.ms", self.step_delay_ms.to_string());
+        props.insert("step.delay.ms".to_string(), self.step_delay_ms.to_string());
         
         if let Some(tempo) = self.tempo_bpm {
-            props.set("tempo.bpm", tempo.to_string());
+            props.insert("tempo.bpm".to_string(), tempo.to_string());
         }
         
         // Audio settings
-        props.set_comment("----- Audio Settings -----");
-        props.set("audio.note.duration.ms", self.note_duration_ms.to_string());
-        props.set("audio.gap.ms", self.gap_ms.to_string());
-        props.set("audio.chord.duration.ms", self.chord_duration_ms.to_string());
-        props.set("audio.initial.delay.ms", self.initial_delay_ms.to_string());
-        props.set("audio.detect.chords", self.detect_chords.to_string());
-        props.set("audio.volume", self.volume.to_string());
-        props.set("audio.pitch.shift", self.pitch_shift.to_string());
+        props.insert("audio.note.duration.ms".to_string(), self.note_duration_ms.to_string());
+        props.insert("audio.gap.ms".to_string(), self.gap_ms.to_string());
+        props.insert("audio.chord.duration.ms".to_string(), self.chord_duration_ms.to_string());
+        props.insert("audio.initial.delay.ms".to_string(), self.initial_delay_ms.to_string());
+        props.insert("audio.detect.chords".to_string(), self.detect_chords.to_string());
+        props.insert("audio.volume".to_string(), self.volume.to_string());
+        props.insert("audio.pitch.shift".to_string(), self.pitch_shift.to_string());
         
         // Random board settings
-        props.set_comment("----- Random Board Settings -----");
-        props.set("random.alive.probability", self.alive_probability.to_string());
+        props.insert("random.alive.probability".to_string(), self.alive_probability.to_string());
         
         // Board dimensions
-        props.set_comment("----- Board Dimensions -----\nNOTE: Board width is ALWAYS 88 cells to match piano keys and CANNOT be changed.");
         if let Some(height) = self.board_height {
-            props.set("board.height", height.to_string());
+            props.insert("board.height".to_string(), height.to_string());
         } else {
-            props.set("board.height", "40");
+            props.insert("board.height".to_string(), "40".to_string());
         }
         
         // Write the properties to the file
         let file = fs::File::create(path)?;
-        java_properties::write(props, file)?;
+        java_properties::write(file, &props)?;
         
         Ok(())
     }
@@ -731,19 +781,41 @@ impl Config {
         // Logging settings
         println!("  Logging Settings:");
         println!("    Log Level: {}", self.log_level);
-        println!("    Log to File: {}", self.log_to_file);
+        println!("    Logging Destinations: {}", self.log_destinations.len());
+        for (i, dest) in self.log_destinations.iter().enumerate() {
+            println!("    Destination #{}: {}", i+1, dest.name);
+            println!("      Type: {:?}", dest.destination_type);
+            println!("      Level: {}", dest.level);
+            if let Some(ref pattern) = dest.pattern {
+                println!("      Pattern: {}", pattern);
+            }
+            if let Some(ref path) = dest.file_path {
+                println!("      File Path: {}", path.display());
+            }
+            if let Some(ref rotation) = dest.rotation {
+                println!("      Rotation: enabled={}", rotation.enabled);
+                if rotation.enabled {
+                    println!("      Size Limit: {} MB", rotation.size_limit / (1024 * 1024));
+                    println!("      File Count: {}", rotation.file_count);
+                }
+            }
+        }
+        
+        // Legacy logging settings
+        println!("    Legacy Log Settings:");
+        println!("      Log to File: {}", self.log_to_file);
         if self.log_to_file {
             if let Some(ref path) = self.log_file_path {
-                println!("    Log File: {}", path.display());
+                println!("      Log File: {}", path.display());
             } else {
-                println!("    Log File: logs/{}/{}", DEFAULT_LOG_SUBDIR, DEFAULT_LOG_FILE);
+                println!("      Log File: logs/{}/{}", DEFAULT_LOG_SUBDIR, DEFAULT_LOG_FILE);
             }
-            println!("    File Log Level: {}", self.log_file_level);
-            println!("    Console Log Level: {}", self.log_console_level);
-            println!("    File Rotation: {}", self.log_file_rotation);
+            println!("      File Log Level: {}", self.log_file_level);
+            println!("      Console Log Level: {}", self.log_console_level);
+            println!("      File Rotation: {}", self.log_file_rotation);
             if self.log_file_rotation {
-                println!("    File Size Limit: {} MB", self.log_file_size_limit / (1024 * 1024));
-                println!("    File Count: {}", self.log_file_count);
+                println!("      File Size Limit: {} MB", self.log_file_size_limit / (1024 * 1024));
+                println!("      File Count: {}", self.log_file_count);
             }
         }
         
@@ -764,7 +836,7 @@ mod tests {
     fn test_default_config() {
         let config = Config::default();
         assert!(matches!(config.board_type, BoardType::Random));
-        assert!(!config.silent);
+        assert!(config.audio_enabled);
         assert!(matches!(config.generations, GenerationLimit::Unlimited));
         assert_eq!(config.step_delay_ms, 200);
         assert!(config.tempo_bpm.is_none());
@@ -777,7 +849,7 @@ mod tests {
         
         let config = Config {
             board_type: BoardType::Static,
-            silent: true,
+            audio_enabled: false,
             generations: GenerationLimit::Unlimited,
             step_delay_ms: 500,
             tempo_bpm: Some(140.0),

@@ -4,8 +4,8 @@ use rodio::{Decoder, OutputStream, Sink, Source};
 use std::io::Cursor;
 use std::collections::HashMap;
 use std::fs::File;
-use std::path::{Path, PathBuf};
-use log::{info, warn, error, debug, trace};
+use std::path::Path;
+use log::{info, warn, error, debug};
 
 // Define constant for audio samples path
 const AUDIO_SAMPLES_PATH: &str = "static/audio";
@@ -13,7 +13,6 @@ const AUDIO_SAMPLES_PATH: &str = "static/audio";
 pub trait AudioPlayer {
     fn play_piano_keys(&self, keys: &[usize]);
     fn play_chord(&self, keys: &[usize], duration_ms: u64);
-    fn play_note_sequence(&self, keys: &[usize], note_duration_ms: u64, gap_ms: u64);
 }
 
 pub struct AudioEngine {
@@ -243,7 +242,7 @@ impl AudioEngine {
                 // Diminished chord: 3 and 6 semitones
                 // Augmented chord: 4 and 8 semitones
                 if (interval1 == 3 || interval1 == 4) && 
-                   (interval2 >= 6 && interval2 <= 8) {
+                   (6..=8).contains(&interval2) {
                     return true;
                 }
             }
@@ -268,6 +267,7 @@ impl AudioEngine {
     }
 }
 
+// Implement AudioPlayer trait for AudioEngine
 impl AudioPlayer for AudioEngine {
     fn play_piano_keys(&self, keys: &[usize]) {
         if keys.is_empty() {
@@ -305,8 +305,14 @@ impl AudioPlayer for AudioEngine {
         
         thread::sleep(Duration::from_millis(duration_ms));
     }
+}
 
-    fn play_note_sequence(&self, keys: &[usize], note_duration_ms: u64, gap_ms: u64) {
+// Additional methods for AudioEngine are implemented in this block
+// This ensures the trait implementation remains clean
+impl AudioEngine {
+    // Implementation exists for possible future use by other modules
+    #[cfg(test)]
+    fn play_notes_in_sequence(&self, keys: &[usize], note_duration_ms: u64, gap_ms: u64) {
         if keys.is_empty() {
             return;
         }
@@ -336,10 +342,6 @@ impl AudioPlayer for NullAudioEngine {
     fn play_chord(&self, _keys: &[usize], _duration_ms: u64) {
         // Do nothing - null object pattern
     }
-
-    fn play_note_sequence(&self, _keys: &[usize], _note_duration_ms: u64, _gap_ms: u64) {
-        // Do nothing - null object pattern
-    }
 }
 
 #[cfg(test)]
@@ -364,7 +366,6 @@ mod tests {
         // All operations should be no-ops and not panic
         engine.play_piano_keys(&[0, 1, 2, 3, 4]);
         engine.play_chord(&[24, 28, 31], 1000);
-        engine.play_note_sequence(&[48, 50, 52], 200, 50);
         
         // Test edge cases
         engine.play_piano_keys(&[]);

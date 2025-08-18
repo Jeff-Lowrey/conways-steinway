@@ -1,15 +1,21 @@
 // Configuration loader for Conway's Steinway
 // Loads configuration from the config directory
 
+// Module currently only used in tests
+#[cfg(test)]
 use std::path::PathBuf;
+#[cfg(test)]
 use std::env;
 
-// Import from types.rs
+// Import from types.rs (only used in tests)
+#[cfg(test)]
 use super::types::Config;
 
-pub fn get_config_path() -> PathBuf {
+// Utility function to find configuration path
+#[cfg(test)]
+fn get_config_path() -> PathBuf {
     // Try to find the config directory relative to the current executable
-    let mut config_path = match env::current_exe() {
+    match env::current_exe() {
         Ok(exe_path) => {
             let mut path = exe_path;
             // Navigate up to project root then to config/rust
@@ -30,18 +36,20 @@ pub fn get_config_path() -> PathBuf {
             path.push("rust");
             path
         }
-    };
-    
-    config_path
+    }
 }
 
-pub fn get_default_config_file() -> PathBuf {
+// Helper to find default config file location
+#[cfg(test)]
+fn get_default_config_file() -> PathBuf {
     let mut path = get_config_path();
     path.push("conways_steinway.toml");
     path
 }
 
-pub fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
+// Function to load configuration from args and file
+#[cfg(test)]
+fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
     let mut config = Config::from_args_and_env()?;
     
     // If no config file was specified via command line, try the default location

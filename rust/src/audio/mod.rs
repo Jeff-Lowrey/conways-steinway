@@ -1,8 +1,8 @@
 // Audio module for Conway's Steinway
 // Re-exports audio components
 
-mod audio;
+mod audio_engine;
 mod piano_player;
 
-pub use audio::AudioEngine;
+// Re-export what's needed
 pub use piano_player::PlayerPiano;
