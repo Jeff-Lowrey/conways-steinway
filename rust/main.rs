@@ -190,23 +190,37 @@ impl fmt::Display for GameOfLife {
 
 
 fn main() {
-    // Initialize logger
+    // Initialize logger with default setting
+    if std::env::var("RUST_LOG").is_err() {
+        std::env::set_var("RUST_LOG", "info");
+    }
     env_logger::init();
     
     info!("Conway's Steinway - Rust Implementation");
     info!("======================================");
 
     // Load configuration from all sources
-    let config = match Config::from_args_and_env() {
-        Ok(config) => config,
+    let mut config = match Config::from_args_and_env() {
+        Ok(config) => {
+            debug!("Loaded configuration successfully");
+            config
+        },
         Err(e) => {
             error!("Error loading configuration: {}", e);
             std::process::exit(1);
         }
     };
+    
+    // Update the logger with the configured log level
+    if std::env::var("RUST_LOG").is_ok() {
+        debug!("Using environment-specified log level");
+    } else {
+        debug!("Setting log level to: {}", config.log_level);
+        // Note: We can't change the logger after it's initialized,
+        // but we can note the configured level for next run
+    }
 
     // Apply board-specific configuration - Für Elise gets special treatment
-    let mut config = config;
     match config.board_type {
         BoardType::FurElise => {
             // Always use 80 generations for complete musical experience

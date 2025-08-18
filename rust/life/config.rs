@@ -12,6 +12,10 @@ pub struct Config {
     pub step_delay_ms: u64,
     pub tempo_bpm: Option<f64>,
     pub config_file: Option<PathBuf>,
+    
+    // Logging configuration
+    #[serde(default = "default_log_level")]
+    pub log_level: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -27,6 +31,11 @@ pub enum GenerationLimit {
     Unlimited,
 }
 
+// Default values for new config options
+fn default_log_level() -> String {
+    "info".to_string()
+}
+
 impl Default for Config {
     fn default() -> Self {
         Config {
@@ -36,6 +45,7 @@ impl Default for Config {
             step_delay_ms: 200,
             tempo_bpm: None, // Will be set based on board type
             config_file: None,
+            log_level: default_log_level(),
         }
     }
 }
@@ -90,7 +100,13 @@ impl Config {
                 .value_name("BPM")
                 .help("Musical tempo in beats per minute (overrides delay)")
                 .value_parser(clap::value_parser!(f64))
-                .env("CONWAYS_STEINWAY_TEMPO"));
+                .env("CONWAYS_STEINWAY_TEMPO"))
+            .arg(Arg::new("log-level")
+                .long("log-level")
+                .value_name("LEVEL")
+                .help("Log level (trace, debug, info, warn, error)")
+                .value_parser(["trace", "debug", "info", "warn", "error"])
+                .env("RUST_LOG"));
 
         let matches = app.get_matches();
 
@@ -129,6 +145,11 @@ impl Config {
         if let Some(&tempo) = matches.get_one::<f64>("tempo") {
             config.tempo_bpm = Some(tempo);
         }
+        
+        // Parse log level if specified
+        if let Some(log_level) = matches.get_one::<String>("log-level") {
+            config.log_level = log_level.to_string();
+        }
 
         Ok(config)
     }
@@ -150,6 +171,11 @@ impl Config {
             self.generations = file_config.generations;
             self.step_delay_ms = file_config.step_delay_ms;
             self.tempo_bpm = file_config.tempo_bpm;
+            
+            // Set new configuration options if they're in the config file
+            if !file_config.log_level.is_empty() {
+                self.log_level = file_config.log_level;
+            }
         }
         Ok(())
     }
@@ -193,6 +219,10 @@ impl Config {
         if let Some(ref path) = self.config_file {
             info!("  Config File: {}", path.display());
         }
+        
+        // Display logging configuration
+        info!("  Log Level: {}", self.log_level);
+        
         info!("");
     }
 }
