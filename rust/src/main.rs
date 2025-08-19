@@ -1,6 +1,7 @@
 use std::thread;
 use std::time::Duration;
 use log::{info, debug};
+use std::path::PathBuf;
 
 // Import crate items directly
 use audio::PlayerPiano;
@@ -52,6 +53,25 @@ fn main() {
 
     // Print current configuration
     config.print_config();
+    
+    // Save effective configuration to a backup file
+    // This ensures we have a record of the actual settings used
+    let backup_path = PathBuf::from("config/backup/effective_config.cfg");
+    if let Some(parent) = backup_path.parent() {
+        // Create the backup directory if it doesn't exist
+        if !parent.exists() {
+            if let Err(e) = std::fs::create_dir_all(parent) {
+                debug!("Unable to create backup directory: {}", e);
+            }
+        }
+        
+        // Save the effective configuration
+        if let Err(e) = config.save_to_file(&backup_path) {
+            debug!("Unable to save effective configuration: {}", e);
+        } else {
+            debug!("Saved effective configuration to {}", backup_path.display());
+        }
+    }
 
     // Initialize the game board based on configuration
     let mut game = match config.board_type {

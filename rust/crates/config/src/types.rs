@@ -844,8 +844,8 @@ impl Config {
     }
     
     // Helper function to save configuration to a file
-    #[cfg(test)]
-    fn save_to_file(&self, path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+    // This method is used for testing and configuration backup
+    pub fn save_to_file(&self, path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
         // Create an INI config
         let mut ini = configparser::ini::Ini::new();
         
