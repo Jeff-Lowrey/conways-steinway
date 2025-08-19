@@ -33,11 +33,7 @@ htmlcov/
 # VSCode patterns moved to root .gitignore
 
 # Mac OS
-.DS_Store
+# (Pattern moved to root .gitignore)
 
-# Audio samples - ensure availability
-# These patterns match the root .gitignore
-# but are repeated here for clarity
-!../static/audio/
-!../static/audio/*.wav
-!*.wav
+# Audio samples
+# (Patterns moved to root .gitignore)
