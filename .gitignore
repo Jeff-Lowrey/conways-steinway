@@ -5,6 +5,11 @@
 
 # VSCode specific patterns
 **/.vscode
+.vscode/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
 
 # Rust-specific patterns are in the rust/.gitignore file
 # Do not add Rust-specific patterns here - add them to rust/.gitignore instead

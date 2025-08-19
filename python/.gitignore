@@ -30,7 +30,7 @@ htmlcov/
 .ipynb_checkpoints
 
 # IDE specific
-.vscode/
+# VSCode patterns moved to root .gitignore
 
 # Mac OS
 .DS_Store
