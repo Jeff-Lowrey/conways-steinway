@@ -5,13 +5,13 @@
 use clap::{Arg, ArgAction, Command, ValueHint};
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::io::BufReader;
 use std::path::PathBuf;
 use std::collections::HashMap;
-use java_properties;
 use log::warn;
 // Import life crate to access BOARD_WIDTH constant
 use life;
+// Import configparser for INI parsing
+use configparser::ini::Ini;
 // Path is used in implementation
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -661,7 +661,7 @@ impl Config {
             let properties = Self::parse_properties_file(path)?;
             
             // Apply core configuration values
-            if let Some(board_type) = properties.get("board.type") {
+            if let Some(board_type) = properties.get("core_board_type").or_else(|| properties.get("board.type")) {
                 self.board_type = match board_type.to_lowercase().as_str() {
                     "static" => BoardType::Static,
                     "fur_elise" => BoardType::FurElise,
@@ -671,13 +671,13 @@ impl Config {
                 };
             }
             
-            // Check for audio.enabled setting (inverted logic for silent)
-            if let Some(audio_enabled) = properties.get("audio.enabled") {
-                self.silent = audio_enabled.to_lowercase() != "true";
+            // Check for silent mode setting
+            if let Some(silent) = properties.get("core_silent").or_else(|| properties.get("silent")) {
+                self.silent = silent.to_lowercase() == "true";
             }
             
             // Parse generations
-            if let Some(generations_str) = properties.get("generations") {
+            if let Some(generations_str) = properties.get("core_generations").or_else(|| properties.get("generations")) {
                 if generations_str.to_lowercase() == "unlimited" {
                     self.generations = GenerationLimit::Unlimited;
                 } else if let Ok(num) = generations_str.parse::<u32>() {
@@ -690,50 +690,50 @@ impl Config {
             }
             
             // Parse step delay
-            if let Some(delay_str) = properties.get("step.delay.ms") {
+            if let Some(delay_str) = properties.get("core_step_delay_ms").or_else(|| properties.get("step.delay.ms")) {
                 if let Ok(delay) = delay_str.parse::<u64>() {
                     self.step_delay_ms = delay;
                 }
             }
             
             // Parse tempo
-            if let Some(tempo_str) = properties.get("tempo.bpm") {
+            if let Some(tempo_str) = properties.get("core_tempo_bpm").or_else(|| properties.get("tempo.bpm")) {
                 if let Ok(tempo) = tempo_str.parse::<f64>() {
                     self.tempo_bpm = Some(tempo);
                 }
             }
             
             // Parse audio settings
-            if let Some(note_duration_str) = properties.get("audio.note.duration.ms") {
+            if let Some(note_duration_str) = properties.get("audio_note_duration_ms").or_else(|| properties.get("audio.note.duration.ms")) {
                 if let Ok(duration) = note_duration_str.parse::<u64>() {
                     self.note_duration_ms = duration;
                 }
             }
             
-            if let Some(gap_str) = properties.get("audio.gap.ms") {
+            if let Some(gap_str) = properties.get("audio_gap_ms").or_else(|| properties.get("audio.gap.ms")) {
                 if let Ok(gap) = gap_str.parse::<u64>() {
                     self.gap_ms = gap;
                 }
             }
             
-            if let Some(chord_duration_str) = properties.get("audio.chord.duration.ms") {
+            if let Some(chord_duration_str) = properties.get("audio_chord_duration_ms").or_else(|| properties.get("audio.chord.duration.ms")) {
                 if let Ok(duration) = chord_duration_str.parse::<u64>() {
                     self.chord_duration_ms = duration;
                 }
             }
             
-            if let Some(initial_delay_str) = properties.get("audio.initial.delay.ms") {
+            if let Some(initial_delay_str) = properties.get("audio_initial_delay_ms").or_else(|| properties.get("audio.initial.delay.ms")) {
                 if let Ok(delay) = initial_delay_str.parse::<u64>() {
                     self.initial_delay_ms = delay;
                 }
             }
             
-            if let Some(detect_chords_str) = properties.get("audio.detect.chords") {
+            if let Some(detect_chords_str) = properties.get("audio_detect_chords").or_else(|| properties.get("audio.detect.chords")) {
                 let value = detect_chords_str.to_lowercase();
                 self.detect_chords = value == "true" || value == "yes" || value == "on" || value == "1";
             }
             
-            if let Some(volume_str) = properties.get("audio.volume") {
+            if let Some(volume_str) = properties.get("audio_volume").or_else(|| properties.get("audio.volume")) {
                 if let Ok(volume) = volume_str.parse::<f64>() {
                     self.volume = volume;
                 }
@@ -743,7 +743,7 @@ impl Config {
                 }
             }
             
-            if let Some(pitch_shift_str) = properties.get("audio.pitch.shift") {
+            if let Some(pitch_shift_str) = properties.get("audio_pitch_shift").or_else(|| properties.get("audio.pitch.shift")) {
                 let value = pitch_shift_str.to_lowercase();
                 self.pitch_shift = value == "true" || value == "yes" || value == "on" || value == "1";
             } else if let Some(pitch_shift_str) = properties.get("pitch.shift") {
@@ -752,21 +752,21 @@ impl Config {
             }
             
             // Parse random board settings
-            if let Some(alive_prob_str) = properties.get("random.alive.probability") {
+            if let Some(alive_prob_str) = properties.get("random_alive_probability").or_else(|| properties.get("random.alive.probability")) {
                 if let Ok(prob) = alive_prob_str.parse::<f64>() {
                     self.alive_probability = prob;
                 }
             }
             
             // Parse board dimensions
-            if let Some(height_str) = properties.get("board.height") {
+            if let Some(height_str) = properties.get("board_height").or_else(|| properties.get("board.height")) {
                 if let Ok(height) = height_str.parse::<usize>() {
                     self.board_height = height;
                 }
             }
             
             // Parse logging configuration
-            if let Some(log_level) = properties.get("log.level") {
+            if let Some(log_level) = properties.get("logging_level").or_else(|| properties.get("log.level")) {
                 // Validate log level
                 let log_level = log_level.to_lowercase();
                 if VALID_LOG_LEVELS.contains(&log_level.as_str()) {
@@ -778,16 +778,27 @@ impl Config {
             }
             
             // Parse multi-destination logging configuration
-            if let Some(log_to_file) = properties.get("log.to.file") {
+            if let Some(log_to_file) = properties.get("rust_logging_to_file")
+                .or_else(|| properties.get("logging_to_file"))
+                .or_else(|| properties.get("log.to.file")) {
                 let value = log_to_file.to_lowercase();
                 self.log_to_file = value == "true" || value == "yes" || value == "on" || value == "1";
             }
             
-            if let Some(log_file_path) = properties.get("log.file.path") {
-                self.log_file_path = Some(PathBuf::from(log_file_path));
+            // Check for Rust-specific log path prefix
+            let log_path_prefix = properties.get("rust_log_path_prefix")
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| "logs/backend".to_string());
+
+            // Handle log file path with prefix
+            if let Some(log_file_path) = properties.get("logging_file_path").or_else(|| properties.get("log.file.path")) {
+                self.log_file_path = Some(PathBuf::from(format!("{}/{}", log_path_prefix, log_file_path)));
+            } else {
+                // Default log file path with prefix
+                self.log_file_path = Some(PathBuf::from(format!("{}/conways_steinway.log", log_path_prefix)));
             }
             
-            if let Some(log_file_level) = properties.get("log.file.level") {
+            if let Some(log_file_level) = properties.get("logging_file_level").or_else(|| properties.get("log.file.level")) {
                 let level = log_file_level.to_lowercase();
                 if VALID_LOG_LEVELS.contains(&level.as_str()) {
                     self.log_file_level = level;
@@ -797,7 +808,7 @@ impl Config {
                 }
             }
             
-            if let Some(log_console_level) = properties.get("log.console.level") {
+            if let Some(log_console_level) = properties.get("logging_console_level").or_else(|| properties.get("log.console.level")) {
                 let level = log_console_level.to_lowercase();
                 if VALID_LOG_LEVELS.contains(&level.as_str()) {
                     self.log_console_level = level;
@@ -807,46 +818,80 @@ impl Config {
                 }
             }
             
-            if let Some(rotation) = properties.get("log.file.rotation") {
+            if let Some(rotation) = properties.get("logging_file_rotation").or_else(|| properties.get("log.file.rotation")) {
                 let value = rotation.to_lowercase();
                 self.log_file_rotation = value == "true" || value == "yes" || value == "on" || value == "1";
             }
             
-            if let Some(size_limit) = properties.get("log.file.size.limit") {
+            if let Some(size_limit) = properties.get("logging_file_size_limit").or_else(|| properties.get("log.file.size.limit")) {
                 if let Ok(size_mb) = size_limit.parse::<u64>() {
                     self.log_file_size_limit = size_mb * 1024 * 1024; // Convert MB to bytes
                 }
             }
             
-            if let Some(file_count) = properties.get("log.file.count") {
+            if let Some(file_count) = properties.get("logging_file_count").or_else(|| properties.get("log.file.count")) {
                 if let Ok(count) = file_count.parse::<u32>() {
                     self.log_file_count = count;
                 }
             }
+            
+            // Parse logging destinations
+            self.parse_logging_destinations(&properties);
         }
         Ok(())
     }
     
     fn parse_properties_file(path: &PathBuf) -> Result<HashMap<String, String>, Box<dyn std::error::Error>> {
-        // Use the java-properties crate to parse the properties file
-        let file = fs::File::open(path)?;
-        let reader = BufReader::new(file);
-        let props = java_properties::read(reader)?;
+        // Use the configparser crate to parse the INI file
+        let mut ini = Ini::new();
+        let ini_map = ini.load(path)?;
         
-        // Convert from java_properties::PropertiesIter to HashMap<String, String>
+        // Convert from INI format to flat HashMap<String, String>
         let mut properties = HashMap::new();
-        for (key, value) in props {
-            properties.insert(key, value);
+        
+        for (section, props) in ini_map.iter() {
+            for (key, value) in props.iter() {
+                let config_key = if section == "DEFAULT" {
+                    // Keys in the DEFAULT section are used as-is
+                    key.clone()
+                } else {
+                    // Keys in other sections are prefixed with the section name
+                    format!("{}_{}", section.to_lowercase(), key)
+                };
+                
+                if let Some(val) = value {
+                    properties.insert(config_key, val.clone());
+                }
+            }
+        }
+        
+        // Special case for handling the old "silent" property
+        // which might be present as a boolean value or a flag
+        if ini_map.get("core").and_then(|props| props.get("silent")).is_some() {
+            properties.insert("silent".to_string(), "true".to_string());
         }
         
         Ok(properties)
     }
 
+    // Helper method to parse logging destinations from flattened properties
+    fn parse_logging_destinations(&mut self, _properties: &HashMap<String, String>) {
+        // For the INI format, we need to look for sections starting with "logging.destinations"
+        // For now, we'll just support a single console destination as default
+        // The full implementation would need to parse nested sections
+        
+        // In a real implementation, this method would scan for all logging.destinations sections
+        // and create destination configs for each one found
+        
+        // For simplicity, we'll just use the default console destination
+        self.log_destinations = default_log_destinations();
+    }
+    
     // Helper function to save configuration to a file
     #[cfg(test)]
     fn save_to_file(&self, path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
-        // Create properties hashmap
-        let mut props = std::collections::HashMap::new();
+        // Create an INI config
+        let mut ini = Ini::new();
         
         // Core configuration
         let board_type_str = match self.board_type {
@@ -856,42 +901,55 @@ impl Config {
             BoardType::Complex => "complex",
             BoardType::Showcase => "showcase",
         };
-        props.insert("board.type".to_string(), board_type_str.to_string());
+        
+        ini.set("core", "board_type", Some(board_type_str.to_string()));
         
         if self.silent {
-            props.insert("silent".to_string(), "".to_string());
+            ini.set("core", "silent", Some("true".to_string()));
         }
         
         let generations_str = match self.generations {
             GenerationLimit::Unlimited => "unlimited".to_string(),
             GenerationLimit::Limited(n) => n.to_string(),
         };
-        props.insert("generations".to_string(), generations_str);
+        ini.set("core", "generations", Some(generations_str));
         
-        props.insert("step.delay.ms".to_string(), self.step_delay_ms.to_string());
+        ini.set("core", "step_delay_ms", Some(self.step_delay_ms.to_string()));
         
         if let Some(tempo) = self.tempo_bpm {
-            props.insert("tempo.bpm".to_string(), tempo.to_string());
+            ini.set("core", "tempo_bpm", Some(tempo.to_string()));
         }
         
         // Audio settings
-        props.insert("audio.note.duration.ms".to_string(), self.note_duration_ms.to_string());
-        props.insert("audio.gap.ms".to_string(), self.gap_ms.to_string());
-        props.insert("audio.chord.duration.ms".to_string(), self.chord_duration_ms.to_string());
-        props.insert("audio.initial.delay.ms".to_string(), self.initial_delay_ms.to_string());
-        props.insert("audio.detect.chords".to_string(), self.detect_chords.to_string());
-        props.insert("audio.volume".to_string(), self.volume.to_string());
-        props.insert("audio.pitch.shift".to_string(), self.pitch_shift.to_string());
+        ini.set("audio", "note_duration_ms", Some(self.note_duration_ms.to_string()));
+        ini.set("audio", "gap_ms", Some(self.gap_ms.to_string()));
+        ini.set("audio", "chord_duration_ms", Some(self.chord_duration_ms.to_string()));
+        ini.set("audio", "initial_delay_ms", Some(self.initial_delay_ms.to_string()));
+        ini.set("audio", "detect_chords", Some(self.detect_chords.to_string()));
+        ini.set("audio", "volume", Some(self.volume.to_string()));
+        ini.set("audio", "pitch_shift", Some(self.pitch_shift.to_string()));
         
         // Random board settings
-        props.insert("random.alive.probability".to_string(), self.alive_probability.to_string());
+        ini.set("random", "alive_probability", Some(self.alive_probability.to_string()));
         
         // Board dimensions
-        props.insert("board.height".to_string(), self.board_height.to_string());
+        ini.set("board", "height", Some(self.board_height.to_string()));
         
-        // Write the properties to the file
-        let file = fs::File::create(path)?;
-        java_properties::write(file, &props)?;
+        // Logging settings
+        ini.set("logging", "level", Some(self.log_level.clone()));
+        ini.set("logging", "to_file", Some(self.log_to_file.to_string()));
+        ini.set("logging", "file_level", Some(self.log_file_level.clone()));
+        ini.set("logging", "console_level", Some(self.log_console_level.clone()));
+        ini.set("logging", "file_rotation", Some(self.log_file_rotation.to_string()));
+        ini.set("logging", "file_size_limit", Some((self.log_file_size_limit / (1024 * 1024)).to_string()));
+        ini.set("logging", "file_count", Some(self.log_file_count.to_string()));
+        
+        if let Some(ref file_path) = self.log_file_path {
+            ini.set("logging", "file_path", Some(file_path.to_string_lossy().to_string()));
+        }
+        
+        // Write the INI file
+        ini.write(path.to_str().unwrap())?;
         
         Ok(())
     }
@@ -1026,8 +1084,10 @@ mod tests {
         assert!(file_path.exists());
 
         let contents = fs::read_to_string(&file_path).unwrap();
-        assert!(contents.contains("board.type=static"));
-        assert!(contents.contains("silent="));
+        println!("Config file contents: {}", contents);
+        assert!(contents.contains("[core]"));
+        assert!(contents.contains("board_type = static") || contents.contains("board_type=static"));
+        assert!(contents.contains("silent = true") || contents.contains("silent=true"));
     }
 
     #[test]

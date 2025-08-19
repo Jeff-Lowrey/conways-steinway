@@ -11,6 +11,7 @@ toml = "0.8"
 java-properties = "2.0.0"
 log = "0.4"
 life = { path = "../life" }
+configparser = "3.0.2"
 
 [dev-dependencies]
 tempfile = "3.8"
