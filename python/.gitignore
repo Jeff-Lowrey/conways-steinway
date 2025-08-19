@@ -31,3 +31,10 @@ htmlcov/
 
 # Mac OS
 .DS_Store
+
+# Audio samples - ensure availability
+# These patterns match the root .gitignore
+# but are repeated here for clarity
+!../static/audio/
+!../static/audio/*.wav
+!*.wav
