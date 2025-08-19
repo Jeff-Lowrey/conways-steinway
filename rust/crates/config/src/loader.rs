@@ -49,6 +49,7 @@ fn get_default_config_file() -> PathBuf {
 
 // Function to load configuration from args and file
 #[cfg(test)]
+#[allow(dead_code)]
 fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
     let mut config = Config::from_args_and_env()?;
     

@@ -4,11 +4,11 @@ use rodio::{Decoder, OutputStream, Sink, Source};
 use std::io::Cursor;
 use std::collections::HashMap;
 use std::fs::File;
-use std::path::Path;
 use log::{info, warn, error, debug};
+// Keep RepoStructure import as it's used in load_samples() and tests
+use common::RepoStructure;
 
-// Define constant for audio samples path
-const AUDIO_SAMPLES_PATH: &str = "static/audio";
+// We no longer need hardcoded paths since we're using the repo structure utility
 
 pub trait AudioPlayer {
     fn play_piano_keys(&self, keys: &[usize]);
@@ -86,12 +86,16 @@ impl AudioEngine {
             (84, "piano_c7.wav"),    // C7 (key 84)
         ];
         
+        // Get audio samples directory from repository structure
+        let repo = RepoStructure::new();
+        let audio_dir = repo.audio_samples_dir();
+        
         // Log the audio path being used
-        info!("Loading audio samples from path: {}", AUDIO_SAMPLES_PATH);
+        info!("Loading audio samples from path: {}", audio_dir.display());
 
         for (key, file_name) in sample_files.iter() {
             // Construct the full path
-            let full_path = Path::new(AUDIO_SAMPLES_PATH).join(file_name);
+            let full_path = audio_dir.join(file_name);
             if let Ok(mut file) = File::open(&full_path) {
                 let mut buffer = Vec::new();
                 if std::io::Read::read_to_end(&mut file, &mut buffer).is_ok() {
@@ -319,6 +323,7 @@ impl AudioPlayer for AudioEngine {
 impl AudioEngine {
     // Implementation exists for possible future use by other modules
     #[cfg(test)]
+    #[allow(dead_code)]
     fn play_notes_in_sequence(&self, keys: &[usize], note_duration_ms: u64, gap_ms: u64) {
         if keys.is_empty() {
             return;
@@ -391,15 +396,19 @@ mod tests {
     fn test_sample_selection_algorithm() {
         let engine = AudioEngine::new();
         
-        // Test that the sample cache is populated
-        assert!(!engine.sample_cache.is_empty(), "Sample cache should not be empty");
+        // Samples should always be available with our repository structure
+        let repo = RepoStructure::new();
+        let audio_dir = repo.audio_samples_dir();
+        assert!(!engine.sample_cache.is_empty(), "Sample cache is empty. Audio path: {}", audio_dir.display());
         
         // Test sample selection for various keys
         for key in 0..88 {
-            let _sample = engine.get_sample_for_key(key);
-            // Note: This might be None if no samples are loaded in test environment
-            // but the algorithm should not panic
+            let sample = engine.get_sample_for_key(key);
+            // We should have a sample for every key now
+            assert!(sample.is_some(), "No sample found for key {}", key);
         }
+        
+        println!("Successfully tested sample selection with {} samples", engine.sample_cache.len());
     }
 
     #[test]

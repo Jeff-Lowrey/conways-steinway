@@ -36,3 +36,20 @@ fn test_piano_key_range() {
     let all_keys: Vec<usize> = (0..88).collect();
     piano.play_keys(&all_keys);
 }
+
+#[test]
+fn test_real_audio_engine_initialization() {
+    // This test verifies that we can initialize a real audio engine
+    // with the configured audio sample paths
+    
+    // Create a real piano (not silent)
+    let _piano = PlayerPiano::new();
+    
+    // Just verify initialization doesn't panic
+    // We won't actually play notes to avoid making noise during tests
+    
+    // Note: We can't test disable/enable methods here as they're
+    // only available when the #[cfg(test)] attribute is set at the PlayerPiano module level
+    
+    println!("Successfully verified real audio engine initialization");
+}

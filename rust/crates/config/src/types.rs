@@ -10,13 +10,15 @@ use std::path::PathBuf;
 use std::collections::HashMap;
 use java_properties;
 use log::warn;
+// Import life crate to access BOARD_WIDTH constant
+use life;
 // Path is used in implementation
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub board_type: BoardType,
-    #[serde(alias = "silent")]
-    pub audio_enabled: bool,
+    #[serde(default = "default_silent")]
+    pub silent: bool, // Changed from audio_enabled to match Python implementation
     pub generations: GenerationLimit,
     pub step_delay_ms: u64,
     pub tempo_bpm: Option<f64>,
@@ -34,16 +36,17 @@ pub struct Config {
     #[serde(default = "default_detect_chords")]
     pub detect_chords: bool,
     #[serde(default = "default_volume")]
-    pub volume: f32,
+    pub volume: f64, // Changed from f32 to f64 to match Python
     #[serde(default = "default_pitch_shift")]
     pub pitch_shift: bool,
     
     // Random board settings
     #[serde(default = "default_alive_probability")]
-    pub alive_probability: f32,
+    pub alive_probability: f64, // Changed from f32 to f64 to match Python
     
-    // Board dimensions (fixed)
-    pub board_height: Option<usize>,
+    // Board dimensions (fixed height, width is fixed at 88 cells by a constant)
+    #[serde(default = "default_board_height")]
+    pub board_height: usize, // Changed from Option<usize> to usize to match Python
     
     // Logging configuration
     #[serde(default = "default_log_level")]
@@ -71,14 +74,17 @@ pub struct Config {
 }
 
 // Default functions for optional fields
+fn default_silent() -> bool { false } // Audio is enabled by default (silent=false)
 fn default_note_duration() -> u64 { 200 }
 fn default_gap_ms() -> u64 { 50 }
 fn default_chord_duration() -> u64 { 300 }
 fn default_initial_delay() -> u64 { 50 }
 fn default_detect_chords() -> bool { true }
-fn default_volume() -> f32 { 0.6 }
+fn default_volume() -> f64 { 0.6 } // Changed from f32 to f64
 fn default_pitch_shift() -> bool { true }
-fn default_alive_probability() -> f32 { 0.2 }
+fn default_alive_probability() -> f64 { 0.2 } // Changed from f32 to f64
+// Board width is now a fixed constant (life::BOARD_WIDTH = 88)
+fn default_board_height() -> usize { 40 }
 fn default_log_level() -> String { "info".to_string() }
 fn default_log_to_file() -> bool { false }
 fn default_log_file_path() -> Option<PathBuf> { None }
@@ -96,6 +102,16 @@ fn default_log_destinations() -> Vec<LogDestination> {
             pattern: None,
             file_path: None,
             rotation: None,
+            http: None,
+            syslog: None,
+            socket: None,
+            fluentd: None,
+            gelf: None,
+            mongodb: None,
+            postgres: None,
+            kafka: None,
+            rabbitmq: None,
+            redis: None,
         }
     ]
 }
@@ -109,9 +125,26 @@ pub const DEFAULT_LOG_SUBDIR: &str = "backend";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum LogDestinationType {
+    // Basic appenders (already supported)
     Console,
     File,
     Json,
+    
+    // Network appenders
+    Http,      // HTTP/HTTPS endpoints
+    Syslog,    // Syslog servers (local or remote)
+    Socket,    // Raw TCP/UDP socket
+    Fluentd,   // Fluentd data collector
+    Gelf,      // Graylog Extended Log Format
+    
+    // Database appenders
+    MongoDB,   // MongoDB database
+    Postgres,  // PostgreSQL database
+    
+    // Message queue appenders
+    Kafka,     // Apache Kafka
+    RabbitMQ,  // RabbitMQ
+    Redis      // Redis pub/sub or lists
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -134,6 +167,99 @@ impl Default for LogRotationConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AuthConfig {
+    pub username: Option<String>,
+    pub password: Option<String>,
+    pub token: Option<String>,
+    pub key_file: Option<PathBuf>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HttpConfig {
+    pub url: String,
+    pub method: String,
+    pub content_type: String,
+    pub batch_size: Option<usize>,
+    pub timeout_ms: Option<u64>,
+    pub retry_count: Option<usize>,
+    pub headers: Option<HashMap<String, String>>,
+    pub auth: Option<AuthConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SyslogConfig {
+    pub hostname: String,
+    pub port: Option<u16>,
+    pub facility: String,
+    pub protocol: Option<String>, // "tcp", "udp", or unspecified for local
+    pub app_name: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SocketConfig {
+    pub hostname: String,
+    pub port: u16,
+    pub protocol: String, // "tcp" or "udp"
+    pub retry_count: Option<usize>,
+    pub timeout_ms: Option<u64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FluentdConfig {
+    pub hostname: String,
+    pub port: u16,
+    pub tag: String,
+    pub timeout_ms: Option<u64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GelfConfig {
+    pub hostname: String,
+    pub port: u16,
+    pub protocol: String, // "tcp", "udp", "http"
+    pub compression: Option<bool>,
+    pub additional_fields: Option<HashMap<String, String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MongoDBConfig {
+    pub connection_string: String,
+    pub database: String,
+    pub collection: String,
+    pub batch_size: Option<usize>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PostgresConfig {
+    pub connection_string: String,
+    pub table: String,
+    pub batch_size: Option<usize>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KafkaConfig {
+    pub brokers: Vec<String>,
+    pub topic: String,
+    pub client_id: Option<String>,
+    pub compression: Option<String>, // "none", "gzip", "snappy", "lz4"
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RabbitMQConfig {
+    pub uri: String,
+    pub exchange: String,
+    pub routing_key: String,
+    pub declare_exchange: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RedisConfig {
+    pub uri: String,
+    pub key: String,
+    pub mode: String, // "list", "pubsub", "channel"
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogDestination {
     pub name: String,
     pub destination_type: LogDestinationType,
@@ -142,6 +268,18 @@ pub struct LogDestination {
     pub pattern: Option<String>,
     pub file_path: Option<PathBuf>,
     pub rotation: Option<LogRotationConfig>,
+    
+    // New appender configurations
+    pub http: Option<HttpConfig>,
+    pub syslog: Option<SyslogConfig>,
+    pub socket: Option<SocketConfig>,
+    pub fluentd: Option<FluentdConfig>,
+    pub gelf: Option<GelfConfig>,
+    pub mongodb: Option<MongoDBConfig>,
+    pub postgres: Option<PostgresConfig>,
+    pub kafka: Option<KafkaConfig>,
+    pub rabbitmq: Option<RabbitMQConfig>,
+    pub redis: Option<RedisConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -159,11 +297,44 @@ pub enum GenerationLimit {
     Unlimited,
 }
 
+impl GenerationLimit {
+    // This method helps to match Python's GenerationLimit behavior
+    pub fn is_limited(&self) -> bool {
+        match self {
+            GenerationLimit::Limited(_) => true,
+            GenerationLimit::Unlimited => false,
+        }
+    }
+    
+    // Get the limit value if limited, otherwise None
+    pub fn limit(&self) -> Option<u32> {
+        match self {
+            GenerationLimit::Limited(value) => Some(*value),
+            GenerationLimit::Unlimited => None,
+        }
+    }
+    
+    // Parse from a string, similar to Python's constructor
+    pub fn from_string(value: &str) -> Self {
+        if value.to_lowercase() == "unlimited" {
+            GenerationLimit::Unlimited
+        } else if let Ok(num) = value.parse::<u32>() {
+            if num == 0 {
+                GenerationLimit::Unlimited
+            } else {
+                GenerationLimit::Limited(num)
+            }
+        } else {
+            GenerationLimit::Unlimited
+        }
+    }
+}
+
 impl Default for Config {
     fn default() -> Self {
         Config {
             board_type: BoardType::Random,
-            audio_enabled: true,
+            silent: default_silent(), // Changed from audio_enabled to silent
             generations: GenerationLimit::Unlimited,
             step_delay_ms: 200,
             tempo_bpm: None, // Will be set based on board type
@@ -181,8 +352,8 @@ impl Default for Config {
             // Random board settings
             alive_probability: default_alive_probability(),
             
-            // Board dimensions (fixed)
-            board_height: Some(40),
+            // Board dimensions (height only, width is fixed at 88 cells)
+            board_height: default_board_height(), // Changed from Option<usize> to usize
             
             // Logging configuration
             log_level: default_log_level(),
@@ -284,7 +455,7 @@ impl Config {
                 .long("volume")
                 .value_name("LEVEL")
                 .help("Audio volume (0.0-1.0)")
-                .value_parser(clap::value_parser!(f32))
+                .value_parser(clap::value_parser!(f64))
                 .env("CONWAYS_STEINWAY_VOLUME"))
             // Remove --pitch-shift flag since it's now the default and we only check for --no-pitch-shift
             .arg(Arg::new("no-pitch-shift")
@@ -296,7 +467,7 @@ impl Config {
                 .long("alive-probability")
                 .value_name("PROBABILITY")
                 .help("Probability of cells being alive in random boards (0.0-1.0)")
-                .value_parser(clap::value_parser!(f32))
+                .value_parser(clap::value_parser!(f64))
                 .env("CONWAYS_STEINWAY_ALIVE_PROBABILITY"))
             // Board dimensions
             .arg(Arg::new("height")
@@ -372,10 +543,10 @@ impl Config {
             };
         }
 
-        // Audio is enabled by default (audio_enabled=true)
-        // Set audio_enabled=false if the --silent flag is present
+        // Audio is enabled by default (silent=false)
+        // Set silent=true if the --silent flag is present
         if matches.get_flag("silent") {
-            config.audio_enabled = false;
+            config.silent = true;
         }
 
         if let Some(&generations) = matches.get_one::<u32>("generations") {
@@ -417,7 +588,7 @@ impl Config {
             config.detect_chords = false;
         }
         
-        if let Some(&volume) = matches.get_one::<f32>("volume") {
+        if let Some(&volume) = matches.get_one::<f64>("volume") {
             config.volume = volume;
         }
         
@@ -428,13 +599,13 @@ impl Config {
         }
         
         // Random board settings from command line
-        if let Some(&alive_probability) = matches.get_one::<f32>("alive-probability") {
+        if let Some(&alive_probability) = matches.get_one::<f64>("alive-probability") {
             config.alive_probability = alive_probability;
         }
         
         // Board dimensions from command line
         if let Some(&height) = matches.get_one::<usize>("height") {
-            config.board_height = Some(height);
+            config.board_height = height;
         }
         
         // Logging configuration
@@ -484,8 +655,7 @@ impl Config {
         if path.exists() {
             // First check if 'silent' key exists in raw file
             let contents = fs::read_to_string(path)?;
-            let is_silent = contents.contains("silent") || contents.contains("audio.enabled=false");
-            self.audio_enabled = !is_silent;
+            self.silent = contents.contains("silent") || contents.contains("audio.enabled=false");
             
             // Parse the properties file
             let properties = Self::parse_properties_file(path)?;
@@ -501,9 +671,9 @@ impl Config {
                 };
             }
             
-            // Check for audio.enabled setting
+            // Check for audio.enabled setting (inverted logic for silent)
             if let Some(audio_enabled) = properties.get("audio.enabled") {
-                self.audio_enabled = audio_enabled.to_lowercase() == "true";
+                self.silent = audio_enabled.to_lowercase() != "true";
             }
             
             // Parse generations
@@ -564,11 +734,11 @@ impl Config {
             }
             
             if let Some(volume_str) = properties.get("audio.volume") {
-                if let Ok(volume) = volume_str.parse::<f32>() {
+                if let Ok(volume) = volume_str.parse::<f64>() {
                     self.volume = volume;
                 }
             } else if let Some(volume_str) = properties.get("volume") {
-                if let Ok(volume) = volume_str.parse::<f32>() {
+                if let Ok(volume) = volume_str.parse::<f64>() {
                     self.volume = volume;
                 }
             }
@@ -583,7 +753,7 @@ impl Config {
             
             // Parse random board settings
             if let Some(alive_prob_str) = properties.get("random.alive.probability") {
-                if let Ok(prob) = alive_prob_str.parse::<f32>() {
+                if let Ok(prob) = alive_prob_str.parse::<f64>() {
                     self.alive_probability = prob;
                 }
             }
@@ -591,7 +761,7 @@ impl Config {
             // Parse board dimensions
             if let Some(height_str) = properties.get("board.height") {
                 if let Ok(height) = height_str.parse::<usize>() {
-                    self.board_height = Some(height);
+                    self.board_height = height;
                 }
             }
             
@@ -688,7 +858,7 @@ impl Config {
         };
         props.insert("board.type".to_string(), board_type_str.to_string());
         
-        if !self.audio_enabled {
+        if self.silent {
             props.insert("silent".to_string(), "".to_string());
         }
         
@@ -717,11 +887,7 @@ impl Config {
         props.insert("random.alive.probability".to_string(), self.alive_probability.to_string());
         
         // Board dimensions
-        if let Some(height) = self.board_height {
-            props.insert("board.height".to_string(), height.to_string());
-        } else {
-            props.insert("board.height".to_string(), "40".to_string());
-        }
+        props.insert("board.height".to_string(), self.board_height.to_string());
         
         // Write the properties to the file
         let file = fs::File::create(path)?;
@@ -750,7 +916,7 @@ impl Config {
     pub fn print_config(&self) {
         println!("Configuration:");
         println!("  Board Type: {:?}", self.board_type);
-        println!("  Silent Mode: {}", !self.audio_enabled);
+        println!("  Silent Mode: {}", self.silent);
         println!("  Generations: {:?}", self.generations);
         
         if let Some(bpm) = self.tempo_bpm {
@@ -761,8 +927,7 @@ impl Config {
         }
         
         // Board dimensions
-        let height = self.board_height.unwrap_or(40);
-        println!("  Board: 88×{}", height);
+        println!("  Board: {}×{}", life::BOARD_WIDTH, self.board_height);
         
         // Audio settings
         println!("  Audio Settings:");
@@ -836,7 +1001,7 @@ mod tests {
     fn test_default_config() {
         let config = Config::default();
         assert!(matches!(config.board_type, BoardType::Random));
-        assert!(config.audio_enabled);
+        assert!(!config.silent); // Audio is enabled by default (silent=false)
         assert!(matches!(config.generations, GenerationLimit::Unlimited));
         assert_eq!(config.step_delay_ms, 200);
         assert!(config.tempo_bpm.is_none());
@@ -849,7 +1014,7 @@ mod tests {
         
         let config = Config {
             board_type: BoardType::Static,
-            audio_enabled: false,
+            silent: true, // Changed from audio_enabled: false
             generations: GenerationLimit::Unlimited,
             step_delay_ms: 500,
             tempo_bpm: Some(140.0),

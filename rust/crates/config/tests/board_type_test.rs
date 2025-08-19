@@ -79,17 +79,17 @@ fn test_audio_settings() {
     
     // 1. Test audio enabled/disabled
     let audio_enabled_config = Config {
-        audio_enabled: true,
+        silent: false,
         ..Default::default()
     };
     
     let audio_disabled_config = Config {
-        audio_enabled: false,
+        silent: true,
         ..Default::default()
     };
     
-    assert!(audio_enabled_config.audio_enabled);
-    assert!(!audio_disabled_config.audio_enabled);
+    assert!(!audio_enabled_config.silent);
+    assert!(audio_disabled_config.silent);
     
     // 2. Test note duration settings
     let note_durations = [50, 100, 200, 500];

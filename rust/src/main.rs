@@ -75,10 +75,10 @@ fn main() {
     };
 
     // Initialize audio based on configuration
-    let piano = if config.audio_enabled {
-        PlayerPiano::new()
-    } else {
+    let piano = if config.silent {
         PlayerPiano::new_silent()
+    } else {
+        PlayerPiano::new()
     };
 
     // Run the simulation based on generation limit

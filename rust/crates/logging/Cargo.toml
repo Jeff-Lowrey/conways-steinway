@@ -9,5 +9,51 @@ log = "0.4"
 log4rs = { version = "1.2", features = ["console_appender", "file_appender", "json_encoder"] }
 config = { path = "../config" }
 
+# Network logging appenders (all optional)
+# Currently commented out as these are just placeholders for future implementation
+# log4rs-http = { version = "0.1", optional = true }      # HTTP/HTTPS appender
+# log4rs-syslog = { version = "3.0", optional = true }    # Syslog appender
+# log4rs-fluentd = { version = "0.1", optional = true }   # Fluentd appender
+# log4rs-gelf = { version = "0.1", optional = true }      # Graylog GELF appender
+# socket-appender = { version = "0.1", optional = true }  # TCP/UDP socket appender
+
+# Database appenders (all optional)
+# log4rs-mongodb = { version = "0.1", optional = true }   # MongoDB appender
+# log4rs-postgres = { version = "0.1", optional = true }  # PostgreSQL appender
+
+# Message queue appenders (all optional)
+# log4rs-kafka = { version = "0.1", optional = true }     # Kafka appender
+# log4rs-rabbitmq = { version = "0.1", optional = true }  # RabbitMQ appender
+# log4rs-redis = { version = "0.1", optional = true }     # Redis appender
+
+[features]
+default = []
+
+# These features are placeholders for future implementation
+# They are commented out until the dependencies are available
+
+# Network appenders
+# http = ["log4rs-http"]
+# syslog = ["log4rs-syslog"]
+# socket = ["socket-appender"]
+# fluentd = ["log4rs-fluentd"]
+# gelf = ["log4rs-gelf"]
+
+# Database appenders
+# mongodb = ["log4rs-mongodb"]
+# postgres = ["log4rs-postgres"]
+
+# Message queue appenders
+# kafka = ["log4rs-kafka"]
+# rabbitmq = ["log4rs-rabbitmq"]
+# redis = ["log4rs-redis"]
+
+# Convenience feature groups
+# all-network = ["http", "syslog", "socket", "fluentd", "gelf"]
+# all-database = ["mongodb", "postgres"]
+# all-messageq = ["kafka", "rabbitmq", "redis"]
+# all = ["all-network", "all-database", "all-messageq"]
+
 [dev-dependencies]
 tempfile = "3.8"
+env_logger = "0.10"

@@ -9,7 +9,7 @@ fn test_config_defaults() {
     
     // Verify default values
     assert!(matches!(config.board_type, BoardType::Random));
-    assert!(config.audio_enabled);
+    assert!(!config.silent); // Audio is enabled by default (silent=false)
     assert!(matches!(config.generations, GenerationLimit::Unlimited));
     assert_eq!(config.step_delay_ms, 200);
     assert!(config.tempo_bpm.is_none());
@@ -20,7 +20,7 @@ fn test_config_custom_values() {
     // Create a custom config
     let config = Config {
         board_type: BoardType::Static,
-        audio_enabled: false,
+        silent: true, // Audio disabled
         generations: GenerationLimit::Limited(42),
         step_delay_ms: 300,
         tempo_bpm: Some(120.0),
@@ -29,7 +29,7 @@ fn test_config_custom_values() {
     
     // Verify custom values
     assert!(matches!(config.board_type, BoardType::Static));
-    assert!(!config.audio_enabled);
+    assert!(config.silent); // Verify audio is disabled
     assert!(matches!(config.generations, GenerationLimit::Limited(42)));
     assert_eq!(config.step_delay_ms, 300);
     assert!(config.tempo_bpm.is_some());

@@ -8,6 +8,7 @@ authors = ["Conway's Steinway Contributors"]
 [workspace]
 members = [
     "crates/audio",
+    "crates/common",
     "crates/config",
     "crates/life",
     "crates/logging"
@@ -22,6 +23,7 @@ java-properties = "2.0.0"
 log = "0.4"
 log4rs = { version = "1.2", features = ["console_appender", "file_appender", "json_encoder"] }
 audio = { path = "./crates/audio" }
+common = { path = "./crates/common" }
 config = { path = "./crates/config" }
 life = { path = "./crates/life" }
 logging = { path = "./crates/logging" }

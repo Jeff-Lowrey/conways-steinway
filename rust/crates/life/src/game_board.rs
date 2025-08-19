@@ -100,6 +100,7 @@ impl GameBoard {
     
     // Not currently used in main game loop but available for testing
     #[cfg(test)]
+    #[allow(dead_code)]
     fn from_pattern(pattern: &[&str]) -> GameOfLife {
         let mut game = GameOfLife::new();
         
@@ -453,6 +454,7 @@ impl GameBoard {
     // Helper method to create a showcase board with various patterns
     // Available for future demo mode
     #[cfg(test)]
+    #[allow(dead_code)]
     fn create_showcase_board() -> GameOfLife {
         let mut game = GameOfLife::new();
         
