@@ -1,2 +1,39 @@
-rust##
-.DS_Store
+# Python-specific .gitignore file
+# This file contains ALL patterns specific to the Python implementation
+# The root .gitignore file will defer to this file for Python-specific patterns
+
+# Python binary and cache files
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+# *.so pattern moved to root .gitignore (build artifacts)
+
+# Virtual environments
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.env.local
+__pypackages__/
+.python-version
+
+# Testing and coverage
+.tox/
+.coverage
+htmlcov/
+.hypothesis/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IDE specific
+# VSCode patterns moved to root .gitignore
+
+# Mac OS
+# (Pattern moved to root .gitignore)
+
+# Audio samples
+# (Patterns moved to root .gitignore)
