@@ -29,6 +29,7 @@ release/
 # Rust-specific IDE files and settings
 .rust-analyzer.toml
 rust-project.json
+.vscode/
 
 # Build artifacts
 *.so
