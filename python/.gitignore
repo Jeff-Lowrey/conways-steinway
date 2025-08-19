@@ -6,8 +6,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
 .Python
+# *.so pattern moved to root .gitignore (build artifacts)
 
 # Virtual environments
 .venv/
