@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Change to the rust/life directory where Cargo.toml is located
-cd "$(dirname "$0")/life"
+# Change to the rust directory where Cargo.toml is now located
+cd "$(dirname "$0")"
 
-# Run the compiled binary with logging enabled
-RUST_LOG=info cargo run -- "$@"
+# Run the compiled binary with standard logging
+cargo run -- "$@"

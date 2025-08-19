@@ -13,7 +13,33 @@ This Rust implementation combines Conway's Game of Life with piano audio synthes
 - Piano audio output with sample-based playback
 - Chord detection for more musical output
 - Standardized configuration system compatible with Python implementation
+- Structured logging to multiple destinations (console and file)
 - Option to run in silent mode (no audio)
+
+## Project Structure
+
+The Rust implementation is organized as follows:
+
+```
+rust/
+├── Cargo.toml             # Rust package manifest
+├── src/                   # Source code directory
+│   ├── main.rs            # Main application entry point
+│   ├── audio/             # Audio module for piano sound generation
+│   │   ├── mod.rs         # Module definition
+│   │   ├── audio.rs       # Audio engine implementation
+│   │   └── piano_player.rs # Piano player implementation
+│   ├── config/            # Configuration handling
+│   │   ├── mod.rs         # Module definition
+│   │   ├── types.rs       # Configuration types
+│   │   └── loader.rs      # Configuration loading
+│   ├── life/              # Game of Life implementation
+│   │   ├── mod.rs         # Module definition
+│   │   └── game_board.rs  # Game board implementation
+│   └── logging.rs         # Multi-destination logging system
+├── logs/                  # Directory for log files (created at runtime)
+└── run-rust.sh            # Helper script to run the application
+```
 
 ## Installation
 
@@ -23,26 +49,26 @@ This Rust implementation combines Conway's Game of Life with piano audio synthes
 
 ### Building
 ```bash
-cd rust/life
+cd rust
 cargo build --release
 ```
 
-### Running
+## Running
 
 You can run the Rust implementation using the included launcher script:
 
 ```bash
 # From the project root directory
-./run-rust.sh
+./rust/run-rust.sh
 
 # With custom options
-./run-rust.sh --board-type fur_elise --tempo 120
+./rust/run-rust.sh --board-type fur_elise --tempo 120
 ```
 
 Or run it directly with cargo:
 
 ```bash
-cd rust/life
+cd rust
 cargo run
 
 # With options
@@ -51,7 +77,7 @@ cargo run -- --board-type fur_elise --silent
 
 ## Configuration Options
 
-The Rust implementation uses the same standardized configuration system as the Python version:
+### Game Options
 
 ```
 --board-type <type>      Board initialization type (random, static, fur_elise)
@@ -63,6 +89,28 @@ The Rust implementation uses the same standardized configuration system as the P
 --no-pitch-shift         Disable pitch shifting (enabled by default)
 ```
 
+### Logging Options
+
+The application supports logging to multiple destinations (console and file) with different log levels:
+
+```
+--log-level <level>           Global log level (trace, debug, info, warn, error)
+--log-to-file                 Enable logging to file
+--log-file-path <path>        Custom path for log file
+--log-file-level <level>      Log level for file output (default: debug)
+--log-console-level <level>   Log level for console output (default: info)
+--no-log-file-rotation        Disable log file rotation
+--log-file-size-limit <MB>    Size limit for log files in megabytes (default: 10)
+--log-file-count <count>      Number of rotated log files to keep (default: 5)
+```
+
+By default, when file logging is enabled:
+- Log files are stored in the project root `logs/backend/` directory
+- Log files are rotated when they reach 10 MB
+- Up to 5 rotated log files are kept
+- Console log level is set to `info`
+- File log level is set to `debug` (more verbose)
+
 Configuration is loaded from the following sources (in order of precedence):
 1. Command-line arguments
 2. Environment variables
@@ -72,11 +120,11 @@ Configuration is loaded from the following sources (in order of precedence):
 
 ### Core Modules
 
-- `lib.rs`: Core library definitions including Game of Life implementation
-- `game_board.rs`: Board manipulation and pattern generators
-- `config.rs`: Configuration handling
-- `config_loader.rs`: Configuration file loading
-- `unified_config.rs`: Shared configuration system
+- `main.rs`: Application entry point and game loop
+- `logging.rs`: Multi-destination logging implementation
+- `config/types.rs`: Configuration types and validation
+- `config/loader.rs`: Configuration loading from various sources
+- `life/game_board.rs`: Board manipulation and pattern generators
 - `audio/audio.rs`: Audio engine for sample playback
 - `audio/piano_player.rs`: Piano interface for key mapping
 
@@ -103,11 +151,12 @@ All boolean options follow a standardized approach:
    - `--silent` to disable audio
    - `--no-detect-chords` to disable chord detection
    - `--no-pitch-shift` to disable pitch shifting
+   - `--no-log-file-rotation` to disable log file rotation
 
 ## Running Tests
 
 ```bash
-cd rust/life
+cd rust
 cargo test
 ```
 

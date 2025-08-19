@@ -1,0 +1,56 @@
+[package]
+name = "logging"
+version = "0.1.0"
+edition = "2021"
+description = "Logging module for Conway's Steinway"
+
+[dependencies]
+log = "0.4"
+log4rs = { version = "1.2", features = ["console_appender", "file_appender", "json_encoder"] }
+config = { path = "../config" }
+
+# Network logging appenders (all optional)
+# Currently commented out as these are just placeholders for future implementation
+# log4rs-http = { version = "0.1", optional = true }      # HTTP/HTTPS appender
+# log4rs-syslog = { version = "3.0", optional = true }    # Syslog appender
+# log4rs-fluentd = { version = "0.1", optional = true }   # Fluentd appender
+# log4rs-gelf = { version = "0.1", optional = true }      # Graylog GELF appender
+# socket-appender = { version = "0.1", optional = true }  # TCP/UDP socket appender
+
+# Database appenders (all optional)
+# log4rs-mongodb = { version = "0.1", optional = true }   # MongoDB appender
+# log4rs-postgres = { version = "0.1", optional = true }  # PostgreSQL appender
+
+# Message queue appenders (all optional)
+# log4rs-kafka = { version = "0.1", optional = true }     # Kafka appender
+# log4rs-rabbitmq = { version = "0.1", optional = true }  # RabbitMQ appender
+# log4rs-redis = { version = "0.1", optional = true }     # Redis appender
+
+[features]
+default = []
+
+# Network appenders
+http = []
+syslog = []
+socket = []
+fluentd = []
+gelf = []
+
+# Database appenders
+mongodb = []
+postgres = []
+
+# Message queue appenders
+kafka = []
+rabbitmq = []
+redis = []
+
+# Convenience feature groups
+all-network = ["http", "syslog", "socket", "fluentd", "gelf"]
+all-database = ["mongodb", "postgres"]
+all-messageq = ["kafka", "rabbitmq", "redis"]
+all = ["all-network", "all-database", "all-messageq"]
+
+[dev-dependencies]
+tempfile = "3.8"
+env_logger = "0.10"

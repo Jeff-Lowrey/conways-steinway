@@ -4,6 +4,7 @@
 .LSOverride
 
 # Rust-specific patterns are in the rust/.gitignore file
+# Do not add Rust-specific patterns here - add them to rust/.gitignore instead
 
 # Python
 **/__pycache__/
@@ -31,9 +32,8 @@ __pypackages__/
 # Include piano samples - essential for the application
 !samples/
 !samples/*.wav
-!rust/audio-samples/
-!rust/audio-samples/*.wav
 !*.wav
+# Note: Rust-specific audio samples are handled in rust/.gitignore
 
 # IDE files
 .vscode/
@@ -54,12 +54,7 @@ htmlcov/
 .hypothesis/
 
 # Build artifacts
-debug/
-release/
-*.exe
-*.so
-*.dll
-*.dylib
+# Note: Rust-specific build artifacts are in rust/.gitignore
 
 # Temporary files
 *.tmp
