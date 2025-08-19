@@ -42,6 +42,8 @@
 .settings/
 *.sublime-workspace
 *.sublime-project
+.rust-analyzer.toml
+rust-project.json
 
 # Build artifacts
 *.exe
