@@ -4,7 +4,6 @@
 
 use clap::{Arg, ArgAction, Command, ValueHint};
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::path::PathBuf;
 use std::collections::HashMap;
 use log::warn;
@@ -123,7 +122,7 @@ pub const VALID_LOG_LEVELS: [&str; 5] = ["trace", "debug", "info", "warn", "erro
 pub const DEFAULT_LOG_FILE: &str = "conways_steinway.log";
 pub const DEFAULT_LOG_SUBDIR: &str = "backend";
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum LogDestinationType {
     // Basic appenders (already supported)
     Console,
@@ -653,15 +652,11 @@ impl Config {
 
     pub fn load_from_file(&mut self, path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
         if path.exists() {
-            // First check if 'silent' key exists in raw file
-            let contents = fs::read_to_string(path)?;
-            self.silent = contents.contains("silent") || contents.contains("audio.enabled=false");
-            
-            // Parse the properties file
+            // Parse the configuration file
             let properties = Self::parse_properties_file(path)?;
             
             // Apply core configuration values
-            if let Some(board_type) = properties.get("core_board_type").or_else(|| properties.get("board.type")) {
+            if let Some(board_type) = properties.get("core_board_type") {
                 self.board_type = match board_type.to_lowercase().as_str() {
                     "static" => BoardType::Static,
                     "fur_elise" => BoardType::FurElise,
@@ -672,12 +667,12 @@ impl Config {
             }
             
             // Check for silent mode setting
-            if let Some(silent) = properties.get("core_silent").or_else(|| properties.get("silent")) {
+            if let Some(silent) = properties.get("core_silent") {
                 self.silent = silent.to_lowercase() == "true";
             }
             
             // Parse generations
-            if let Some(generations_str) = properties.get("core_generations").or_else(|| properties.get("generations")) {
+            if let Some(generations_str) = properties.get("core_generations") {
                 if generations_str.to_lowercase() == "unlimited" {
                     self.generations = GenerationLimit::Unlimited;
                 } else if let Ok(num) = generations_str.parse::<u32>() {
@@ -690,83 +685,76 @@ impl Config {
             }
             
             // Parse step delay
-            if let Some(delay_str) = properties.get("core_step_delay_ms").or_else(|| properties.get("step.delay.ms")) {
+            if let Some(delay_str) = properties.get("core_step_delay_ms") {
                 if let Ok(delay) = delay_str.parse::<u64>() {
                     self.step_delay_ms = delay;
                 }
             }
             
             // Parse tempo
-            if let Some(tempo_str) = properties.get("core_tempo_bpm").or_else(|| properties.get("tempo.bpm")) {
+            if let Some(tempo_str) = properties.get("core_tempo_bpm") {
                 if let Ok(tempo) = tempo_str.parse::<f64>() {
                     self.tempo_bpm = Some(tempo);
                 }
             }
             
             // Parse audio settings
-            if let Some(note_duration_str) = properties.get("audio_note_duration_ms").or_else(|| properties.get("audio.note.duration.ms")) {
+            if let Some(note_duration_str) = properties.get("audio_note_duration_ms") {
                 if let Ok(duration) = note_duration_str.parse::<u64>() {
                     self.note_duration_ms = duration;
                 }
             }
             
-            if let Some(gap_str) = properties.get("audio_gap_ms").or_else(|| properties.get("audio.gap.ms")) {
+            if let Some(gap_str) = properties.get("audio_gap_ms") {
                 if let Ok(gap) = gap_str.parse::<u64>() {
                     self.gap_ms = gap;
                 }
             }
             
-            if let Some(chord_duration_str) = properties.get("audio_chord_duration_ms").or_else(|| properties.get("audio.chord.duration.ms")) {
+            if let Some(chord_duration_str) = properties.get("audio_chord_duration_ms") {
                 if let Ok(duration) = chord_duration_str.parse::<u64>() {
                     self.chord_duration_ms = duration;
                 }
             }
             
-            if let Some(initial_delay_str) = properties.get("audio_initial_delay_ms").or_else(|| properties.get("audio.initial.delay.ms")) {
+            if let Some(initial_delay_str) = properties.get("audio_initial_delay_ms") {
                 if let Ok(delay) = initial_delay_str.parse::<u64>() {
                     self.initial_delay_ms = delay;
                 }
             }
             
-            if let Some(detect_chords_str) = properties.get("audio_detect_chords").or_else(|| properties.get("audio.detect.chords")) {
+            if let Some(detect_chords_str) = properties.get("audio_detect_chords") {
                 let value = detect_chords_str.to_lowercase();
                 self.detect_chords = value == "true" || value == "yes" || value == "on" || value == "1";
             }
             
-            if let Some(volume_str) = properties.get("audio_volume").or_else(|| properties.get("audio.volume")) {
-                if let Ok(volume) = volume_str.parse::<f64>() {
-                    self.volume = volume;
-                }
-            } else if let Some(volume_str) = properties.get("volume") {
+            if let Some(volume_str) = properties.get("audio_volume") {
                 if let Ok(volume) = volume_str.parse::<f64>() {
                     self.volume = volume;
                 }
             }
             
-            if let Some(pitch_shift_str) = properties.get("audio_pitch_shift").or_else(|| properties.get("audio.pitch.shift")) {
-                let value = pitch_shift_str.to_lowercase();
-                self.pitch_shift = value == "true" || value == "yes" || value == "on" || value == "1";
-            } else if let Some(pitch_shift_str) = properties.get("pitch.shift") {
+            if let Some(pitch_shift_str) = properties.get("audio_pitch_shift") {
                 let value = pitch_shift_str.to_lowercase();
                 self.pitch_shift = value == "true" || value == "yes" || value == "on" || value == "1";
             }
             
             // Parse random board settings
-            if let Some(alive_prob_str) = properties.get("random_alive_probability").or_else(|| properties.get("random.alive.probability")) {
+            if let Some(alive_prob_str) = properties.get("random_alive_probability") {
                 if let Ok(prob) = alive_prob_str.parse::<f64>() {
                     self.alive_probability = prob;
                 }
             }
             
             // Parse board dimensions
-            if let Some(height_str) = properties.get("board_height").or_else(|| properties.get("board.height")) {
+            if let Some(height_str) = properties.get("board_height") {
                 if let Ok(height) = height_str.parse::<usize>() {
                     self.board_height = height;
                 }
             }
             
             // Parse logging configuration
-            if let Some(log_level) = properties.get("logging_level").or_else(|| properties.get("log.level")) {
+            if let Some(log_level) = properties.get("logging_level") {
                 // Validate log level
                 let log_level = log_level.to_lowercase();
                 if VALID_LOG_LEVELS.contains(&log_level.as_str()) {
@@ -777,61 +765,28 @@ impl Config {
                 }
             }
             
-            // Parse multi-destination logging configuration
-            if let Some(log_to_file) = properties.get("rust_logging_to_file")
-                .or_else(|| properties.get("logging_to_file"))
-                .or_else(|| properties.get("log.to.file")) {
-                let value = log_to_file.to_lowercase();
-                self.log_to_file = value == "true" || value == "yes" || value == "on" || value == "1";
-            }
+            // Handle destinations directly - we'll keep these fields for compatibility
+            // with the logging module, but they're no longer configured through legacy settings
+            self.log_to_file = false;  // Disable legacy file logging by default
             
-            // Check for Rust-specific log path prefix
+            // Log file destination will be handled through the destinations config
             let log_path_prefix = properties.get("rust_log_path_prefix")
                 .map(|s| s.to_string())
-                .unwrap_or_else(|| "logs/backend".to_string());
-
-            // Handle log file path with prefix
-            if let Some(log_file_path) = properties.get("logging_file_path").or_else(|| properties.get("log.file.path")) {
-                self.log_file_path = Some(PathBuf::from(format!("{}/{}", log_path_prefix, log_file_path)));
-            } else {
-                // Default log file path with prefix
-                self.log_file_path = Some(PathBuf::from(format!("{}/conways_steinway.log", log_path_prefix)));
-            }
+                .unwrap_or_else(|| "logs/rust".to_string());
             
-            if let Some(log_file_level) = properties.get("logging_file_level").or_else(|| properties.get("log.file.level")) {
-                let level = log_file_level.to_lowercase();
+            // Set default log file path
+            self.log_file_path = Some(PathBuf::from(format!("{}/conways_steinway.log", log_path_prefix)));
+            
+            // Parse logging destinations from INI sections
+            if let Some(console_level) = properties.get("logging_destinations_console_level") {
+                let level = console_level.to_lowercase();
                 if VALID_LOG_LEVELS.contains(&level.as_str()) {
-                    self.log_file_level = level;
-                } else {
-                    warn!("Invalid file log level '{}' in config file. Using default: {}", 
-                          level, self.log_file_level);
-                }
-            }
-            
-            if let Some(log_console_level) = properties.get("logging_console_level").or_else(|| properties.get("log.console.level")) {
-                let level = log_console_level.to_lowercase();
-                if VALID_LOG_LEVELS.contains(&level.as_str()) {
-                    self.log_console_level = level;
-                } else {
-                    warn!("Invalid console log level '{}' in config file. Using default: {}", 
-                          level, self.log_console_level);
-                }
-            }
-            
-            if let Some(rotation) = properties.get("logging_file_rotation").or_else(|| properties.get("log.file.rotation")) {
-                let value = rotation.to_lowercase();
-                self.log_file_rotation = value == "true" || value == "yes" || value == "on" || value == "1";
-            }
-            
-            if let Some(size_limit) = properties.get("logging_file_size_limit").or_else(|| properties.get("log.file.size.limit")) {
-                if let Ok(size_mb) = size_limit.parse::<u64>() {
-                    self.log_file_size_limit = size_mb * 1024 * 1024; // Convert MB to bytes
-                }
-            }
-            
-            if let Some(file_count) = properties.get("logging_file_count").or_else(|| properties.get("log.file.count")) {
-                if let Ok(count) = file_count.parse::<u32>() {
-                    self.log_file_count = count;
+                    // Update the console level in the destinations
+                    for dest in &mut self.log_destinations {
+                        if dest.destination_type == LogDestinationType::Console {
+                            dest.level = level.clone();
+                        }
+                    }
                 }
             }
             
@@ -874,17 +829,20 @@ impl Config {
         Ok(properties)
     }
 
-    // Helper method to parse logging destinations from flattened properties
-    fn parse_logging_destinations(&mut self, _properties: &HashMap<String, String>) {
-        // For the INI format, we need to look for sections starting with "logging.destinations"
-        // For now, we'll just support a single console destination as default
-        // The full implementation would need to parse nested sections
-        
-        // In a real implementation, this method would scan for all logging.destinations sections
-        // and create destination configs for each one found
-        
-        // For simplicity, we'll just use the default console destination
+    // Helper method to parse logging destinations from properties
+    fn parse_logging_destinations(&mut self, properties: &HashMap<String, String>) {
+        // Start with default console destination
         self.log_destinations = default_log_destinations();
+        
+        // Look for any console destination configuration and update the default one
+        if let Some(pattern) = properties.get("logging_destinations_console_pattern") {
+            if let Some(dest) = self.log_destinations.iter_mut().find(|d| d.destination_type == LogDestinationType::Console) {
+                dest.pattern = Some(pattern.clone());
+            }
+        }
+        
+        // We could add support for file and other destinations here in a full implementation
+        // For now, we'll just keep it simple with the console destination
     }
     
     // Helper function to save configuration to a file
@@ -1086,8 +1044,8 @@ mod tests {
         let contents = fs::read_to_string(&file_path).unwrap();
         println!("Config file contents: {}", contents);
         assert!(contents.contains("[core]"));
-        assert!(contents.contains("board_type = static") || contents.contains("board_type=static"));
-        assert!(contents.contains("silent = true") || contents.contains("silent=true"));
+        assert!(contents.contains("board_type=static"));
+        assert!(contents.contains("silent=true"));
     }
 
     #[test]
