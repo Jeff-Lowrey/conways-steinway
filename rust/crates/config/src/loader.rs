@@ -43,7 +43,7 @@ fn get_config_path() -> PathBuf {
 #[cfg(test)]
 fn get_default_config_file() -> PathBuf {
     let mut path = get_config_path();
-    path.push("conways_steinway.toml");
+    path.push("conways_steinway.cfg");
     path
 }
 
@@ -82,6 +82,6 @@ mod tests {
                 config_path.to_string_lossy().contains("config/rust"));
         
         let config_file = get_default_config_file();
-        assert!(config_file.ends_with("conways_steinway.toml"));
+        assert!(config_file.ends_with("conways_steinway.cfg"));
     }
 }

@@ -1010,7 +1010,7 @@ mod tests {
     #[test]
     fn test_config_file_creation() {
         let dir = tempdir().unwrap();
-        let file_path = dir.path().join("test_config.properties");
+        let file_path = dir.path().join("test_config.cfg");
         
         let config = Config {
             board_type: BoardType::Static,
@@ -1047,8 +1047,8 @@ mod tests {
 
         // Create temporary files for testing
         let dir = tempdir().unwrap();
-        let file_unlimited = dir.path().join("unlimited.properties");
-        let file_limited = dir.path().join("limited.properties");
+        let file_unlimited = dir.path().join("unlimited.cfg");
+        let file_limited = dir.path().join("limited.cfg");
         
         // Save to properties files
         config_unlimited.save_to_file(&file_unlimited).unwrap();
