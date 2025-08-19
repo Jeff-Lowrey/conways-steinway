@@ -27,7 +27,8 @@ src/main.rs.bak
 *.pdb
 
 # Rust-specific IDE files and settings
-# (Patterns moved to root .gitignore)
+.rust-analyzer.toml
+rust-project.json
 
 # Rust-specific build artifacts
 # (Common build artifacts are in root .gitignore)
