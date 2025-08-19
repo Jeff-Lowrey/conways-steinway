@@ -29,6 +29,9 @@ htmlcov/
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# IDE specific
+.vscode/
+
 # Mac OS
 .DS_Store
 

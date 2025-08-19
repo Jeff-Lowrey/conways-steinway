@@ -26,7 +26,6 @@
 # Note: Rust-specific audio samples are handled in rust/.gitignore
 
 # IDE files
-.vscode/
 .idea/
 *.swp
 *.swo
