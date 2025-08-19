@@ -17,6 +17,12 @@ pub struct RepoStructure {
     pub config_dir: PathBuf,
 }
 
+impl Default for RepoStructure {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RepoStructure {
     /// Create a new RepoStructure by finding the repository root
     pub fn new() -> Self {

@@ -1,7 +1,7 @@
 // Logging module for Conway's Steinway
 // Provides multi-destination logging functionality using log4rs
 
-use log::{LevelFilter, info, warn};
+use log::{LevelFilter, info};
 use log4rs::{
     append::{
         console::ConsoleAppender,
@@ -22,9 +22,7 @@ use std::fs;
 
 use config::{Config as AppConfig};
 use config::types::{
-    LogDestinationType, DEFAULT_LOG_FILE, DEFAULT_LOG_SUBDIR,
-    HttpConfig, SyslogConfig, SocketConfig, FluentdConfig, GelfConfig,
-    MongoDBConfig, PostgresConfig, KafkaConfig, RabbitMQConfig, RedisConfig
+    LogDestinationType, DEFAULT_LOG_FILE, DEFAULT_LOG_SUBDIR
 };
 use std::env;
 
