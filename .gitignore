@@ -9,21 +9,8 @@
 # Rust-specific patterns are in the rust/.gitignore file
 # Do not add Rust-specific patterns here - add them to rust/.gitignore instead
 
-# Python
-**/__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-.venv/
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-.env.local
-__pypackages__/
-.python-version
+# Python-specific patterns are in the python/.gitignore file
+# Do not add Python-specific patterns here - add them to python/.gitignore instead
 
 
 # Audio samples - large binary files (but include piano samples needed for the app)
@@ -50,11 +37,6 @@ __pypackages__/
 .settings/
 *.sublime-workspace
 *.sublime-project
-.ipynb_checkpoints
-.tox/
-.coverage
-htmlcov/
-.hypothesis/
 
 # Build artifacts
 # Note: Rust-specific build artifacts are in rust/.gitignore
