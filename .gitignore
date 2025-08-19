@@ -3,6 +3,9 @@
 .AppleDouble
 .LSOverride
 
+# VSCode specific patterns
+**/.vscode
+
 # Rust-specific patterns are in the rust/.gitignore file
 # Do not add Rust-specific patterns here - add them to rust/.gitignore instead
 
