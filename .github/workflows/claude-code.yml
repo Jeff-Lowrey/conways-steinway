@@ -2,6 +2,10 @@
 name: Claude Code Integration
 
 on:
+  # Disable default email notifications
+  notifications:
+    email: false
+
   pull_request:
     types: [opened, synchronize, reopened, closed]
   issue_comment:
