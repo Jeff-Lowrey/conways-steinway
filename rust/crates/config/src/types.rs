@@ -9,8 +9,6 @@ use std::collections::HashMap;
 use log::warn;
 // Import life crate to access BOARD_WIDTH constant
 use life;
-// Import configparser for INI parsing
-use configparser::ini::Ini;
 // Path is used in implementation
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -798,7 +796,7 @@ impl Config {
     
     fn parse_properties_file(path: &PathBuf) -> Result<HashMap<String, String>, Box<dyn std::error::Error>> {
         // Use the configparser crate to parse the INI file
-        let mut ini = Ini::new();
+        let mut ini = configparser::ini::Ini::new();
         let ini_map = ini.load(path)?;
         
         // Convert from INI format to flat HashMap<String, String>
@@ -849,7 +847,7 @@ impl Config {
     #[cfg(test)]
     fn save_to_file(&self, path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
         // Create an INI config
-        let mut ini = Ini::new();
+        let mut ini = configparser::ini::Ini::new();
         
         // Core configuration
         let board_type_str = match self.board_type {
