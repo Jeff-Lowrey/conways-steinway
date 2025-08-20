@@ -1,6 +1,6 @@
 ---
 name: Feature with Criteria
-about: Feature request with specific completion criteria
+about: Product Feature with specific completion criteria
 title: '[FEATURE]'
 labels: 'feature'
 assignees: ''
