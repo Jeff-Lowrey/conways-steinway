@@ -1,6 +1,7 @@
 import sys
 import subprocess
-from setuptools import setup
+import os
+from setuptools import setup, find_packages
 from setuptools.command.install import install
 from setuptools.command.develop import develop
 
@@ -20,7 +21,13 @@ class CustomDevelopCommand(develop):
 
 
 setup(
-    py_modules=["life", "piano", "config", "game_board", "main", "update_pip"],
+    py_modules=["life", "piano", "game_board", "main", "config", "update_pip"],
+    package_dir={"": "."},
+    packages=find_packages(where="."),
+    package_data={
+        "": ["*.py", "*.toml", "*.sh", "*.bat", "*.env"],
+    },
+    include_package_data=True,
     cmdclass={
         'install': CustomInstallCommand,
         'develop': CustomDevelopCommand,

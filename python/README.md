@@ -1,62 +1,62 @@
 # Python Backend for Conway's Steinway
 
 ## Overview
-This is the Python implementation of the backend for Conway's Steinway, which combines Conway's Game of Life with a piano interface. Each live cell in the bottom row of the Game of Life board triggers a corresponding piano key.
+This is the Python implementation of Conway's Steinway, which combines Conway's Game of Life with a piano interface. Each live cell in the bottom row of the Game of Life board triggers a corresponding piano key. The board is 88 cells wide (matching the number of keys on a piano) with a configurable height (default: 40 cells).
 
 ## Features
-- Configurable Game of Life board (default: 88×40 cells)
+- Configurable Game of Life board (fixed width: 88 cells, configurable height: default 40 cells)
 - Real-time generation of piano notes based on the Game of Life patterns
+- Multiple board types (random, static, fur_elise, complex, showcase)
+- Chord detection for better audio playback
+- Pitch shifting for more musical output
 - Modular design with separate Life and Piano classes
-- Mutable sound output for thread safety
+- Support for configuration via command-line, environment variables, and config files
 
 ## Setup
 
 ### Prerequisites
-- Python 3.7 or higher
+- Python 3.13 or higher
+- pygame 2.5.0 or higher (automatically installed)
 
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/conways-steinway.git
-   cd conways-steinway/python
+   git clone https://github.com/Jeff-Lowrey/conways-steinway.git
+   cd conways-steinway
    ```
 
 2. Create and activate the virtual environment:
    
    **On macOS/Linux:**
    ```bash
-   # Option 1: Use the provided script (recommended)
-   source ./activate_venv.sh
-   
-   # To reinstall the package:
-   source ./activate_venv.sh --reinstall
+   # Use the provided script (recommended)
+   source ./config/scripts/activate_venv.sh
    ```
    
    **On Windows:**
    ```cmd
-   # Option 1: Use the provided script (recommended)
-   .\activate_venv.bat
-   
-   # To reinstall the package:
-   .\activate_venv.bat --reinstall
+   # Use the provided script (recommended)
+   .\config\scripts\activate_venv.bat
    ```
    
    **Manual activation (all platforms):**
    ```bash
    # On macOS/Linux:
-   python -m venv ../.venv
-   source ../.venv/bin/activate
+   python -m venv .venv
+   source .venv/bin/activate
    
    # On Windows:
-   python -m venv ../.venv
-   ../.venv\Scripts\activate
+   python -m venv .venv
+   .venv\Scripts\activate
    ```
    
-   The project is configured to use a virtual environment at `../.venv` (one level up from the python directory).
+   The project is configured to use a virtual environment at `.venv` in the project root.
 
 3. Install dependencies:
    ```bash
+   cd python
    pip install -e .
+   cd ..
    ```
    
    This will install the package in development mode and automatically update pip to the latest version.
@@ -64,15 +64,22 @@ This is the Python implementation of the backend for Conway's Steinway, which co
 ## Usage
 
 ### Running the Application
-To run the main demonstration:
+To run the main demonstration, use the project-level launcher script:
+```bash
+# From the project root directory
+./run.py
+```
+
+Alternatively, you can run the main.py directly:
 ```bash
 python main.py
 ```
 
 This will:
 1. Initialize a Game of Life board with random live cells
-2. Play the piano based on the bottom row for 20 generations
+2. Play the piano based on the bottom row (audio enabled by default)
 3. Display a visual representation of the piano keys being played
+4. Run indefinitely until interrupted (Ctrl+C)
 
 ### Development
 
@@ -90,6 +97,46 @@ The package includes several ways to ensure pip is always updated:
    python update_pip.py
    ```
 
+#### Configuration
+
+The project uses a centralized configuration structure:
+
+```
+/config
+  conways_steinway.properties  # Shared configuration file (Java properties format)
+  pyproject.toml              # Python project configuration (includes dependencies)
+  .env                        # Environment variables for development
+  scripts/                    # Helper scripts for environment setup
+
+/python
+  config.py                   # Python configuration management
+  config_loader.py            # Loads configuration from the shared file
+  setup.py                    # Installation script
+```
+
+##### Command-line Arguments
+
+Run with `--help` to see all available options:
+
+```bash
+python main.py --help
+```
+
+Key options include:
+
+```
+--board-type {random,static,fur_elise,complex,showcase}
+                    Board initialization type
+--silent            Disable audio output (audio is enabled by default)
+--generations GENERATIONS
+                    Generation limit (number or "Unlimited")
+--step-delay STEP_DELAY
+                    Delay between steps in milliseconds
+--tempo TEMPO       Musical tempo in beats per minute
+--no-detect-chords  Disable automatic chord detection (enabled by default)
+--no-pitch-shift    Disable pitch shifting (enabled by default)
+```
+
 #### Core Components
 
 1. **life.py**: Implements Conway's Game of Life
@@ -98,6 +145,10 @@ The package includes several ways to ensure pip is always updated:
 
 2. **piano.py**: Implements the piano interface
    - `Piano` class: Converts game rows to piano key triggers
+   
+3. **config.py**: Configuration management
+   - Located in the `python` directory
+   - Manages command-line arguments, environment variables, and configuration files
 
 #### Design Decisions
 
@@ -115,10 +166,11 @@ python -m pytest tests/
 See the [tests/README.md](./tests/README.md) for more details on testing.
 
 ## Future Enhancements
-1. Add actual sound output (using a library like pygame)
-2. Create a visual interface for the Game of Life board
-3. Add different initial patterns and save/load functionality
-4. Implement tempo control for the piano playback
+1. Create a visual interface for the Game of Life board
+2. Add more initial patterns and save/load functionality
+3. Implement additional musical features (scales, arpeggios)
+4. Add support for MIDI output
+5. Create a web-based interface
 
 ## Design Decisions
 

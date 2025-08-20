@@ -1,0 +1,32 @@
+[package]
+name = "conways-steinway"
+version = "0.1.0"
+edition = "2021"
+description = "A musical interpretation of Conway's Game of Life using piano sounds"
+authors = ["Conway's Steinway Contributors"]
+
+[workspace]
+members = [
+    "crates/audio",
+    "crates/common",
+    "crates/config",
+    "crates/life",
+    "crates/logging"
+]
+
+[dependencies]
+rodio = "0.17"
+clap = { version = "4.0", features = ["derive", "env"] }
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.8"
+java-properties = "2.0.0"
+log = "0.4"
+log4rs = { version = "1.2", features = ["console_appender", "file_appender", "json_encoder"] }
+audio = { path = "./crates/audio" }
+common = { path = "./crates/common" }
+config = { path = "./crates/config" }
+life = { path = "./crates/life" }
+logging = { path = "./crates/logging" }
+
+[dev-dependencies]
+tempfile = "3.8"

@@ -1,0 +1,113 @@
+# Conway's Steinway Unified Configuration File
+# This file is used by both Python and Rust implementations
+
+# ----- Core Configuration -----
+
+# Board initialization type: "random", "static", "fur_elise", "complex", or "showcase"
+# All implementations will use the same format (lowercase with underscores)
+board_type = "random"
+
+# Add 'silent' property to disable audio output
+# Just including this property (without value) will enable silent mode
+# silent
+
+# Generation limit: use { limited = N } or "unlimited"
+# Default: unlimited (except fur_elise ALWAYS uses 80 for full song)
+# Examples:
+# generations = { limited = 50 }   # Run for 50 generations
+# generations = "unlimited"        # Run indefinitely (default)
+generations = "unlimited"
+
+# Delay between steps in milliseconds (ignored if tempo_bpm is set)
+step_delay_ms = 200
+
+# Musical tempo in beats per minute (optional, overrides step_delay_ms)
+# Examples:
+# tempo_bpm = 120.0    # Moderate tempo  
+# tempo_bpm = 126.0    # Für Elise tempo (set automatically)
+# Leave commented to use step_delay_ms instead
+# tempo_bpm = 120.0
+
+# Audio settings
+[audio]
+# Note duration in milliseconds for sequential note playback
+# note_duration_ms = 200
+
+# Gap between notes in milliseconds for sequential note playback
+# gap_ms = 50
+
+# Chord duration in milliseconds
+# chord_duration_ms = 300
+
+# Initial note delay in milliseconds
+# initial_delay_ms = 50
+
+# Detect chord patterns automatically
+# detect_chords = true
+
+# Random initial cells probability (0.0-1.0)
+# For the "random" board type, this controls how many cells start alive
+[random]
+# alive_probability = 0.2
+
+# Audio settings continued
+# volume = 0.6          # Volume level for audio output (0.0-1.0)
+# pitch_shift = true    # Enable pitch shifting for better chromatic range
+
+# ----- Application Settings -----
+
+# Board dimensions
+# NOTE: Board width is ALWAYS 88 cells to match piano keys and CANNOT be changed.
+# This is a fixed requirement to match piano keys and is not configurable.
+[board]
+height = 40  # Board height (default: 40 cells)
+
+# ----- Logging Configuration -----
+
+# Global log level
+log_level = "info"  # Valid values: trace, debug, info, warn, error
+
+# Legacy logging configuration (for backward compatibility)
+[logging.legacy]
+enabled = false                         # Enable file logging with legacy settings
+file_path = "logs/backend/conways_steinway.log"  # Log file path (optional)
+file_level = "debug"                    # Log level for file output
+console_level = "info"                  # Log level for console output
+rotation = true                         # Enable log file rotation
+size_limit_mb = 10                      # Size limit in MB
+file_count = 5                          # Number of archived files to keep
+
+# ----- Multiple Logging Destinations -----
+# You can define multiple logging destinations with different formats and levels
+
+# Console destination example
+[[logging.destinations]]
+name = "console"                         # Unique destination name
+destination_type = "Console"            # Console, File, or Json
+level = "info"                          # Log level for this destination
+# pattern = "[{h({l})}] {m}{n}"         # Optional custom pattern
+
+# File destination example (commented out by default)
+# [[logging.destinations]]
+# name = "file"                           # Unique destination name
+# destination_type = "File"               # Console, File, or Json
+# level = "debug"                         # Log level for this destination
+# file_path = "logs/backend/conways_steinway.log"  # Log file path (optional)
+# pattern = "[{d(%Y-%m-%d %H:%M:%S)} {l}] {t} - {m}{n}"  # Optional custom pattern
+# 
+# [logging.destinations.rotation]         # Optional rotation settings
+# enabled = true                           # Enable log rotation
+# size_limit = 10485760                    # Size limit in bytes (10 MB)
+# file_count = 5                           # Number of archived files to keep
+
+# JSON destination example (commented out by default)
+# [[logging.destinations]]
+# name = "json"                           # Unique destination name
+# destination_type = "Json"               # Console, File, or Json
+# level = "debug"                         # Log level for this destination
+# file_path = "logs/backend/conways_steinway.json"  # Log file path (optional)
+# 
+# [logging.destinations.rotation]         # Optional rotation settings
+# enabled = true                           # Enable log rotation
+# size_limit = 10485760                    # Size limit in bytes (10 MB)
+# file_count = 3                           # Number of archived files to keep

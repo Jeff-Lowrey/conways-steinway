@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "StartSession": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CWD}/.claude/scripts/pr_status.sh",
+            "description": "Fetching PR status..."
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "^pr status$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CWD}/.claude/scripts/pr_status.sh",
+            "description": "Fetching PR status..."
+          }
+        ]
+      }
+    ]
+  }
+}
