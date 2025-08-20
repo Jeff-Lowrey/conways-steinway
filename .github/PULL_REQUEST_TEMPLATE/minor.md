@@ -1,8 +1,8 @@
 ---
 name: Minor Change
 about: This template should be used for minor changes
-title: "[Minor]"
-labels: 
+title: "Minor: "
+labels: "minor"
 assignees: ''
 
 ---
