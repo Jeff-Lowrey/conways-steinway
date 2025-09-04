@@ -104,7 +104,6 @@ The project uses a centralized configuration structure:
 ```
 /config
   conways_steinway.properties  # Shared configuration file (Java properties format)
-  pyproject.toml              # Python project configuration (includes dependencies)
   .env                        # Environment variables for development
   scripts/                    # Helper scripts for environment setup
 
@@ -112,6 +111,7 @@ The project uses a centralized configuration structure:
   config.py                   # Python configuration management
   config_loader.py            # Loads configuration from the shared file
   setup.py                    # Installation script
+  pyproject.toml              # Python project configuration (includes dependencies)
 ```
 
 ##### Command-line Arguments
@@ -179,4 +179,4 @@ See the [tests/README.md](./tests/README.md) for more details on testing.
 3. **Board Display**: Currently uses simple text output, but could be enhanced with a graphical interface
 
 ## License
-[License information goes here]
+[LICENSE](../LICENSE) 
