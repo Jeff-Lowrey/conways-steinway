@@ -4,8 +4,11 @@ name: Claude Code Integration
 on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
-  issue_comment:
-    types: [created]
+    paths-ignore:
+    - '.github/**'
+    - '*.md'
+    - 'docs/**'
+    - 'python/**'
   pull_request_review_comment:
     types: [created]
 
