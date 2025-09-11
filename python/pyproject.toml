@@ -15,21 +15,6 @@ dependencies = [
 [tool.pdm]
 version = {source = "file", path = "__init__.py"}
 
-# PDM global configuration
-[tool.pdm.python]
-requires = ">=3.13"
-
-[tool.pdm.venv]
-location = "../.venv"
-
-[tool.pdm.install]
-cache = true
-parallel = true
-
-# Enable PEP 582 support
-[tool.pdm.options]
-pep582 = true
-
 [tool.pdm.dev-dependencies]
 dev = [
     "pytest>=8.4.0",
@@ -42,13 +27,6 @@ test = "pytest"
 update-pip = "python -m pip install --upgrade pip"
 
 
-
-# Future enhancements (commented out for now)
-# data-analysis = [
-#    "numpy>=1.25.0", 
-#    "matplotlib>=3.7.0",
-# ]
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
@@ -57,5 +35,4 @@ python_functions = "test_*"
 
 [tool.pdm.resolution]
 allow-prereleases = false
-respect-source-order = true
 
