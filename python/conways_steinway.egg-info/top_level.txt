@@ -1,7 +1,0 @@
-config
-game_board
-life
-main
-piano
-tests
-update_pip
