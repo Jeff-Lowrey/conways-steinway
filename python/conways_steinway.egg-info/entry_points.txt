@@ -1,2 +1,0 @@
-[console_scripts]
-update-pip = update_pip:update_pip
