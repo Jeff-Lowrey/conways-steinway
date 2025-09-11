@@ -2,12 +2,12 @@
 name: Claude Code Review
 
 on:
-  # Disable default email notifications
-  notifications:
-    email: false
-
   pull_request:
     types: [opened, synchronize]
+    paths-ignore:
+      - '.github/**'
+      - '*.md'
+      - 'docs/**'
     # Optional: Only run on specific file changes
     # paths:
     #   - "src/**/*.ts"
