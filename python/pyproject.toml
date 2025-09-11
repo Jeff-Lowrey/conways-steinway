@@ -15,6 +15,21 @@ dependencies = [
 [tool.pdm]
 version = {source = "file", path = "__init__.py"}
 
+# PDM global configuration
+[tool.pdm.python]
+requires = ">=3.13"
+
+[tool.pdm.venv]
+location = "../.venv"
+
+[tool.pdm.install]
+cache = true
+parallel = true
+
+# Enable PEP 582 support
+[tool.pdm.options]
+pep582 = true
+
 [tool.pdm.dev-dependencies]
 dev = [
     "pytest>=8.4.0",
