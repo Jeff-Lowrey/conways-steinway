@@ -16,62 +16,40 @@ This is the Python implementation of Conway's Steinway, which combines Conway's 
 
 ### Prerequisites
 - Python 3.13 or higher
-- pygame 2.5.0 or higher (automatically installed)
+- PDM (Python Dependency Manager) - install with `pip install pdm`
 
 ### Installation
 1. Clone the repository:
    ```bash
    git clone https://github.com/Jeff-Lowrey/conways-steinway.git
-   cd conways-steinway
+   cd conways-steinway/python
    ```
 
-2. Create and activate the virtual environment:
-   
-   **On macOS/Linux:**
+2. Install dependencies using PDM:
    ```bash
-   # Use the provided script (recommended)
-   source ./config/scripts/activate_venv.sh
+   # Install dependencies (creates __pypackages__ directory for PEP 582)
+   pdm install
+   
+   # Or install in a virtual environment if PEP 582 is not supported
+   pdm venv create
+   pdm use .venv
+   pdm install
    ```
    
-   **On Windows:**
-   ```cmd
-   # Use the provided script (recommended)
-   .\config\scripts\activate_venv.bat
-   ```
-   
-   **Manual activation (all platforms):**
-   ```bash
-   # On macOS/Linux:
-   python -m venv .venv
-   source .venv/bin/activate
-   
-   # On Windows:
-   python -m venv .venv
-   .venv\Scripts\activate
-   ```
-   
-   The project is configured to use a virtual environment at `.venv` in the project root.
-
-3. Install dependencies:
-   ```bash
-   cd python
-   pip install -e .
-   cd ..
-   ```
-   
-   This will install the package in development mode and automatically update pip to the latest version.
+   PDM supports PEP 582, which means packages are installed in a `__pypackages__` directory rather than requiring a virtual environment. This provides automatic package isolation without activation scripts.
 
 ## Usage
 
 ### Running the Application
-To run the main demonstration, use the project-level launcher script:
+With PDM, you can run the application using PDM scripts:
 ```bash
-# From the project root directory
-./run.py
-```
+# Run using PDM script
+pdm run start
 
-Alternatively, you can run the main.py directly:
-```bash
+# Or run directly with PDM
+pdm run python main.py
+
+# Or run directly if using PEP 582
 python main.py
 ```
 
@@ -83,19 +61,23 @@ This will:
 
 ### Development
 
-#### Updating Pip
+#### Development Commands
 
-The package includes several ways to ensure pip is always updated:
+PDM provides several convenient scripts for development:
 
-1. **During Installation**: Pip is automatically updated when installing the package
-2. **Using the Command**: Run the update-pip command that's installed with the package
-   ```bash
-   update-pip
-   ```
-3. **Directly Using the Script**: Execute the update_pip.py script
-   ```bash
-   python update_pip.py
-   ```
+```bash
+# Run the application
+pdm run start
+
+# Run tests
+pdm run test
+
+# Update pip (legacy support)
+pdm run update-pip
+
+# Install development dependencies
+pdm install --dev
+```
 
 #### Configuration
 
@@ -104,7 +86,6 @@ The project uses a centralized configuration structure:
 ```
 /config
   conways_steinway.properties  # Shared configuration file (Java properties format)
-  pyproject.toml              # Python project configuration (includes dependencies)
   .env                        # Environment variables for development
   scripts/                    # Helper scripts for environment setup
 
@@ -112,6 +93,7 @@ The project uses a centralized configuration structure:
   config.py                   # Python configuration management
   config_loader.py            # Loads configuration from the shared file
   setup.py                    # Installation script
+  pyproject.toml              # Python project configuration (includes dependencies)
 ```
 
 ##### Command-line Arguments
@@ -157,10 +139,14 @@ Key options include:
 3. **Piano Interface**: Each column position directly maps to a piano key position
 
 ## Testing
-The project uses pytest for testing. Run the tests with:
+The project uses pytest for testing. Run the tests with PDM:
 
 ```bash
-python -m pytest tests/
+# Run tests using PDM script
+pdm run test
+
+# Or run tests directly
+pdm run pytest tests/
 ```
 
 See the [tests/README.md](./tests/README.md) for more details on testing.
@@ -179,4 +165,4 @@ See the [tests/README.md](./tests/README.md) for more details on testing.
 3. **Board Display**: Currently uses simple text output, but could be enhanced with a graphical interface
 
 ## License
-[License information goes here]
+[LICENSE](../LICENSE) 
