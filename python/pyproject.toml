@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
 [project]
 name = "conways-steinway"
@@ -10,23 +10,23 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "pygame>=2.5.0",
+    "jproperties>=2.1.0",
 ]
 
-[project.optional-dependencies]
+[tool.pdm]
+version = {source = "file", path = "__init__.py"}
+
+[tool.pdm.dev-dependencies]
 dev = [
-    "pytest==8.4.1",
-    "pytest-asyncio==1.0.0",
-    # Additional development tools can be added here
+    "pytest>=8.4.0",
+    "pytest-asyncio>=1.0.0",
 ]
 
-[project.scripts]
-update-pip = "update_pip:update_pip"
+[tool.pdm.scripts]
+start = "python main.py"
+test = "pytest"
+update-pip = "python -m pip install --upgrade pip"
 
-# Future enhancements (commented out for now)
-# data-analysis = [
-#    "numpy>=1.25.0", 
-#    "matplotlib>=3.7.0",
-# ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -34,12 +34,6 @@ python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 
-[tool.virtualenv]
-path = "../.venv"
-download = true
-always-copy = false
-no-wheel = false
+[tool.pdm.resolution]
+allow-prereleases = false
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["*"]
