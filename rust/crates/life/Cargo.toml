@@ -6,4 +6,4 @@ description = "Game of Life module for Conway's Steinway"
 
 [dependencies]
 log = "0.4"
-env_logger = "0.10"
+env_logger = "0.11"
