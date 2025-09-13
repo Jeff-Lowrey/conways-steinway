@@ -1,0 +1,38 @@
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
+name = "conways-steinway"
+version = "0.1.0"
+description = "Conway's Steinway Python Implementation"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pygame>=2.5.0",
+    "jproperties>=2.1.0",
+]
+
+[tool.pdm]
+version = {source = "file", path = "__init__.py"}
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "pytest>=8.4.0",
+    "pytest-asyncio>=1.0.0",
+]
+
+[tool.pdm.scripts]
+start = "python main.py"
+test = "pytest"
+update-pip = "python -m pip install --upgrade pip"
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+
+[tool.pdm.resolution]
+allow-prereleases = false
