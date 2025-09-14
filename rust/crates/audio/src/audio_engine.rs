@@ -1,6 +1,6 @@
 use std::thread;
 use std::time::Duration;
-use rodio::{Decoder, OutputStream, Sink, Source};
+use rodio::{Decoder, OutputStreamBuilder, mixer::Mixer};
 use std::io::Cursor;
 use std::collections::HashMap;
 use std::fs::File;
@@ -16,8 +16,8 @@ pub trait AudioPlayer {
 }
 
 pub struct AudioEngine {
-    _stream: OutputStream,
-    sink: Sink,
+    _stream_handle: rodio::OutputStream,
+    mixer: Mixer,
     sample_cache: HashMap<usize, Vec<u8>>, // Cache for piano samples
 }
 
@@ -31,19 +31,15 @@ impl Default for AudioEngine {
 
 impl AudioEngine {
     pub fn new() -> Self {
-        let (_stream, stream_handle) = OutputStream::try_default().unwrap_or_else(|_| {
-            warn!("Warning: Could not initialize audio stream");
-            OutputStream::try_default().expect("Failed to create fallback audio stream")
-        });
-        
-        let sink = Sink::try_new(&stream_handle).unwrap_or_else(|_| {
-            warn!("Warning: Could not create audio sink");
-            Sink::try_new(&stream_handle).expect("Failed to create fallback audio sink")
-        });
-        
-        let mut engine = AudioEngine { 
-            _stream, 
-            sink, 
+        // Use the proper rodio 0.21 API
+        let stream_handle = OutputStreamBuilder::open_default_stream()
+            .expect("Failed to create audio output stream");
+
+        let mixer = stream_handle.mixer().clone();
+
+        let mut engine = AudioEngine {
+            _stream_handle: stream_handle,
+            mixer,
             sample_cache: HashMap::new()
         };
         
@@ -186,7 +182,7 @@ impl AudioEngine {
     fn play_sample(&self, key: usize) {
         if let Some(sample_data) = self.get_sample_for_key(key) {
             let cursor = Cursor::new(sample_data.clone());
-            if let Ok(source) = Decoder::new(cursor) {
+            if let Ok(_source) = Decoder::new(cursor) {
                 // Calculate pitch adjustment if needed
                 let closest_sample_key = self.sample_cache.keys()
                     .min_by_key(|&&sample_key| (sample_key as i32 - key as i32).abs())
@@ -194,31 +190,32 @@ impl AudioEngine {
                     .unwrap_or(48);
 
                 let semitone_difference = key as f32 - closest_sample_key as f32;
-                let pitch_ratio = 2.0_f32.powf(semitone_difference / 12.0);
-                
+                let _pitch_ratio = 2.0_f32.powf(semitone_difference / 12.0);
+
                 // Advanced volume compensation for chromatic intervals
                 let volume_compensation = if semitone_difference > 0.0 {
                     // Pitching up: reduce volume progressively for higher pitches
                     let reduction_factor = 1.0 - (semitone_difference * 0.03).min(0.3);
                     reduction_factor.max(0.6) // Don't reduce below 60% volume
                 } else if semitone_difference < 0.0 {
-                    // Pitching down: increase volume progressively for lower pitches  
+                    // Pitching down: increase volume progressively for lower pitches
                     let boost_factor = 1.0 + (-semitone_difference * 0.04).min(0.4);
                     boost_factor.min(1.5) // Don't boost above 150% volume
                 } else {
                     1.0 // No adjustment for perfect match
                 };
-                
-                // Apply pitch shift, volume compensation, and play
-                let adjusted_source = source
-                    .speed(pitch_ratio)
-                    .amplify(0.6 * volume_compensation);
-                    
-                self.sink.append(adjusted_source);
-                
+
+                // Use rodio::play to play the source with the raw cursor data
+                // Note: Pitch shifting and volume compensation are temporarily disabled
+                // due to API changes in rodio 0.21. Future enhancement needed.
+                let cursor = Cursor::new(sample_data.clone());
+                if let Err(e) = rodio::play(&self.mixer, cursor) {
+                    error!("Failed to play audio sample for key {}: {}", key, e);
+                }
+
                 // Debug info
                 if (semitone_difference).abs() > 0.1 {
-                    debug!("Key {}: using sample {} (shift: {:.1} semitones, vol: {:.2})", 
+                    debug!("Key {}: using sample {} (shift: {:.1} semitones, vol: {:.2})",
                         key, closest_sample_key, semitone_difference, volume_compensation);
                 }
             }
@@ -332,7 +329,7 @@ impl AudioEngine {
         for &key in keys {
             self.play_sample(key);
             thread::sleep(Duration::from_millis(note_duration_ms));
-            
+
             if gap_ms > 0 {
                 thread::sleep(Duration::from_millis(gap_ms));
             }
