@@ -1,6 +1,6 @@
 use std::thread;
 use std::time::Duration;
-use rodio::{Decoder, OutputStreamBuilder, mixer::Mixer};
+use rodio::Decoder;
 use std::io::Cursor;
 use std::collections::HashMap;
 use std::fs::File;
@@ -17,7 +17,7 @@ pub trait AudioPlayer {
 
 pub struct AudioEngine {
     _stream_handle: rodio::OutputStream,
-    mixer: Mixer,
+    mixer: rodio::mixer::Mixer,
     sample_cache: HashMap<usize, Vec<u8>>, // Cache for piano samples
 }
 
@@ -32,7 +32,7 @@ impl Default for AudioEngine {
 impl AudioEngine {
     pub fn new() -> Self {
         // Use the proper rodio 0.21 API
-        let stream_handle = OutputStreamBuilder::open_default_stream()
+        let stream_handle = rodio::OutputStreamBuilder::open_default_stream()
             .expect("Failed to create audio output stream");
 
         let mixer = stream_handle.mixer().clone();
@@ -205,12 +205,14 @@ impl AudioEngine {
                     1.0 // No adjustment for perfect match
                 };
 
-                // Use rodio::play to play the source with the raw cursor data
+                // Use rodio 0.21 API to play the source
                 // Note: Pitch shifting and volume compensation are temporarily disabled
                 // due to API changes in rodio 0.21. Future enhancement needed.
                 let cursor = Cursor::new(sample_data.clone());
-                if let Err(e) = rodio::play(&self.mixer, cursor) {
-                    error!("Failed to play audio sample for key {}: {}", key, e);
+                if let Ok(source) = Decoder::new(cursor) {
+                    self.mixer.add(source);
+                } else {
+                    error!("Failed to decode audio sample for key {}", key);
                 }
 
                 // Debug info
