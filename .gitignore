@@ -17,6 +17,9 @@
 # Python-specific patterns are in the python/.gitignore file
 # Do not add Python-specific patterns here - add them to python/.gitignore instead
 
+# Exception: __pypackages__ can appear in config/ directory
+config/__pypackages__/
+
 
 # Audio samples - large binary files (but include piano samples needed for the app)
 *.mp3
