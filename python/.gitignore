@@ -92,7 +92,6 @@ Pipfile.lock
 poetry.lock
 
 # pdm
-.pdm.toml
 .pdm-python
 __pypackages__/
 

@@ -37,3 +37,7 @@ python_functions = "test_*"
 [tool.pdm.resolution]
 allow-prereleases = false
 
+
+[tool.pdm.venv]
+in_project = true
+prompt = "{project_name}-{python_version}"
