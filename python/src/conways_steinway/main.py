@@ -5,38 +5,35 @@ Main application entry point for Conway's Steinway.
 Processes configuration, initializes the game board, and plays music.
 """
 
-import time
 
-from piano import Piano
-import sys
+from .audio.piano import Piano
+from .config.config import BoardType, Config
+from .config.config_loader import ensure_config_in_path
+from .core.game_board import GameBoard
 
-# Load configuration from config directory
-from config_loader import ensure_config_in_path
 ensure_config_in_path()
 
-# Now we can import from the config module
-from config import Config, BoardType, GenerationLimit
-from game_board import GameBoard
 
-
-def main():
+def main() -> None:
     """
     Main function to run Conway's Steinway.
     Processes configuration, initializes the game, and plays music.
     """
     print("Conway's Steinway - Conway's Game of Life generating piano music")
     print("=" * 60)
-    
+
     # Load configuration from command line, environment, and config file
     config = Config.from_args_and_env()
     config.print_config()
-    
+
     # Determine the number of generations to play
-    generations = None if not config.generations.is_limited else config.generations.limit
-    
+    generations = (
+        None if not config.generations.is_limited else config.generations.limit
+    )
+
     # Create a piano with configured settings
     piano = Piano(generations=generations, audio_enabled=not config.silent)
-    
+
     # Initialize the game board based on configuration
     if config.board_type == BoardType.FUR_ELISE:
         piano.game = GameBoard.create_fur_elise_board()
@@ -47,29 +44,29 @@ def main():
     else:  # Default to random
         piano.game = GameBoard.create_random_board()
         print("Initialized with random board configuration")
-    
+
     # Set delay from configuration
     delay_ms = config.get_effective_delay()
     piano.delay_ms = delay_ms
-    
+
     # Display information about the performance
     if generations is None:
         print("Playing indefinitely (press Ctrl+C to stop)...")
     else:
         print(f"Playing for {generations} generations...")
-    
+
     if config.tempo_bpm is not None:
         print(f"Tempo: {config.tempo_bpm:.1f} BPM ({delay_ms}ms per step)")
     else:
         print(f"Step delay: {delay_ms}ms")
-    
+
     print("Each '♪' represents a key being played.")
     print("-" * 60)
-    
+
     # Replace the standard output with a visual representation
     original_print = print
-    
-    def piano_print(message):
+
+    def piano_print(message: str) -> None:
         if "Playing key" in message:
             try:
                 key_num = int(message.split("Playing key ")[1])
@@ -88,11 +85,12 @@ def main():
             original_print("♫", end="")
         else:
             original_print(message)
-    
+
     # Replace the built-in print function temporarily
     import builtins
-    builtins.print = piano_print
-    
+
+    builtins.print = piano_print  # type: ignore
+
     try:
         # Play the piano
         piano.play()
@@ -101,7 +99,7 @@ def main():
     finally:
         # Restore the original print function
         builtins.print = original_print
-    
+
     print("\n" + "-" * 60)
     print("Performance complete!")
 
