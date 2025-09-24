@@ -5,7 +5,6 @@ Main application entry point for Conway's Steinway.
 Processes configuration, initializes the game board, and plays music.
 """
 
-
 from .audio.piano import Piano
 from .config.config import BoardType, Config
 from .config.config_loader import ensure_config_in_path

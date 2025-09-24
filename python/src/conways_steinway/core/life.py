@@ -188,7 +188,9 @@ class Life:
         Uses the current generation as a seed for deterministic randomness.
         """
         # Create a hash of the current generation as a seed
-        seed = hashlib.md5(str(self.generation).encode(), usedforsecurity=False).digest()
+        seed = hashlib.md5(
+            str(self.generation).encode(), usedforsecurity=False
+        ).digest()
         seed_int = struct.unpack("Q", seed[:8])[0]  # Convert first 8 bytes to integer
 
         # Use LCG algorithm similar to Rust implementation
