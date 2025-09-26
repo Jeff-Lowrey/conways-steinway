@@ -65,3 +65,7 @@ Desktop.ini
 # Workflow execution cache
 .workflow-cache/
 python/.bandit
+
+.claude_actions/
+# Project-specific Claude rules
+CLAUDE.md
