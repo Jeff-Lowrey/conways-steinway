@@ -18,7 +18,7 @@ members = [
 rodio = "0.21"
 clap = { version = "4.0", features = ["derive", "env"] }
 serde = { version = "1.0", features = ["derive"] }
-toml = "0.9"
+toml = "1.0"
 java-properties = "2.0.0"
 log = "0.4"
 log4rs = { version = "1.2", features = ["console_appender", "file_appender", "json_encoder"] }
